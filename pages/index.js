@@ -1,3 +1,4 @@
+import Head from "next/head";
 import { useRef, useState } from "react";
 import CanvasEditor from "../components/CanvasEditor";
 import { TEMPLATES } from "../components/templates";
@@ -21,10 +22,13 @@ export default function Home() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-slate-100">
+      <Head>
+        <title>Xiaomi Band Face Editor</title>
+      </Head>
       {/* Top Navigation Bar - Canva style */}
       <header className="h-14 bg-gradient-to-r from-violet-700 to-indigo-700 text-white flex items-center justify-between px-4 shadow-md z-20 shrink-0">
         <div className="flex items-center gap-4">
-          <div className="font-bold text-lg tracking-tight">Band Face Editor</div>
+          <div className="font-bold text-lg tracking-tight">Xiaomi Band Face Editor</div>
           <div className="h-6 w-px bg-white/20 mx-2"></div>
           {/* Template Selector as 'File' menu */}
           <div className="flex items-center gap-2">

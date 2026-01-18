@@ -92,11 +92,11 @@ const CANVAS_MARGIN = 200;
 // --- Layout Styles Definition ---
 const LAYOUT_STYLES = [
   { id: 'none', label: 'なし' },
-  { id: 'style1', label: 'Display 1 (下部)', type: 'bottom' },
-  { id: 'style2', label: 'Display 2 (右上)', type: 'vertical-right' },
-  { id: 'style3', label: 'Display 3 (上部)', type: 'vertical-top' },
-  { id: 'style4', label: 'Display 4 (上下分割)', type: 'split' },
-  { id: 'style5', label: 'Display 5 (中央下)', type: 'bottom-large' },
+  { id: 'style1', label: 'Photo display 1', type: 'bottom' },
+  { id: 'style2', label: 'Photo display 2', type: 'vertical-right' },
+  { id: 'style3', label: 'Photo display 3', type: 'vertical-top' },
+  { id: 'style4', label: 'Photo display 4', type: 'split' },
+  { id: 'style5', label: 'Photo display 5', type: 'bottom-large' },
 ];
 
 function drawLayoutPreview(ctx, w, h, styleId) {
@@ -106,46 +106,76 @@ function drawLayoutPreview(ctx, w, h, styleId) {
     ctx.textBaseline = "middle";
     ctx.shadowColor = "rgba(0,0,0,0.6)";
     ctx.shadowBlur = 6;
+    // helpers for fitted text and padding
+    const padX = w * 0.08;
+    const padY = h * 0.06;
+    const setFont = (weight, size) => { ctx.font = `${weight} ${Math.round(size)}px sans-serif`; };
+    const fitted = (text, weight, basePx, maxWidth) => {
+        let size = basePx; setFont(weight, size);
+        let width = ctx.measureText(text).width;
+        if (width <= maxWidth) return size;
+        size = Math.max(8, Math.floor(basePx * (maxWidth / Math.max(1, width))));
+        setFont(weight, size);
+        return size;
+    };
 
     const date = "AM SAT 16";
 
     if (styleId === 'style1') {
-        ctx.font = "700 52px sans-serif";
-        ctx.fillText("0928", w/2, h * 0.78);
-        ctx.font = "500 16px sans-serif";
-        ctx.fillText(date, w/2, h * 0.85);
-        ctx.font = "400 14px sans-serif";
-        ctx.fillText("🔋 80%", w/2, h * 0.9);
+        // Large time near upper center with safe padding
+        const maxW = w - padX * 2;
+        const timeSize = fitted("0928", "700", h * 0.18, maxW);
+        setFont("700", timeSize);
+        ctx.fillText("0928", w/2, padY + timeSize * 0.7);
+        const dateSize = Math.max(12, Math.round(timeSize * 0.22));
+        setFont("500", dateSize);
+        ctx.fillText(date, w/2, padY + timeSize * 0.7 + dateSize * 1.5);
     } else if (styleId === 'style2') {
+        // Stacked on right side
         ctx.textAlign = "right";
-        ctx.font = "700 90px sans-serif";
-        ctx.fillText("09", w * 0.88, h * 0.3);
-        ctx.fillText("28", w * 0.88, h * 0.48);
-        ctx.font = "500 18px sans-serif";
-        ctx.fillText("SAT 16", w * 0.88, h * 0.58);
-        ctx.fillText("AM 80%", w * 0.88, h * 0.63);
+        const colX = w - padX;
+        const maxW = w * 0.5;
+        const dSize = fitted("09", "700", h * 0.16, maxW);
+        setFont("700", dSize);
+        ctx.fillText("09", colX, h * 0.30);
+        ctx.fillText("28", colX, h * 0.50);
+        const s2 = Math.max(12, Math.round(dSize * 0.22));
+        setFont("500", s2);
+        ctx.fillText("SAT 16", colX, h * 0.60);
+        ctx.fillText("AM", colX, h * 0.66);
+        ctx.textAlign = "center";
     } else if (styleId === 'style3') {
-        ctx.font = "300 120px sans-serif";
-        ctx.fillText("09", w/2, h * 0.3);
-        ctx.fillText("28", w/2, h * 0.55);
-        ctx.font = "500 24px sans-serif";
-        ctx.fillText("AM SAT 16", w/2, h * 0.72);
+        // Tall digits centered towards top
+        const maxW = w - padX * 2;
+        const dSize = fitted("09", "300", h * 0.22, maxW);
+        setFont("300", dSize);
+        ctx.fillText("09", w/2, h * 0.28);
+        ctx.fillText("28", w/2, h * 0.53);
+        const s3 = Math.max(12, Math.round(dSize * 0.2));
+        setFont("500", s3);
+        ctx.fillText("AM  SAT  16", w/2, h * 0.72);
     } else if (styleId === 'style4') {
-        ctx.save();
-        ctx.fillStyle = "rgba(0,0,0,0.3)";
-        ctx.beginPath(); ctx.ellipse(w/2, 0, w*1.2, h*0.35, 0, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.ellipse(w/2, h, w*1.2, h*0.35, 0, 0, Math.PI*2); ctx.fill();
-        ctx.restore();
-        ctx.font = "700 56px sans-serif";
+        // Display 4 preview: remove decorative gray circles top/bottom
+        const maxW = w - padX * 2;
+        const tSize = fitted("0928", "700", h * 0.13, maxW);
+        setFont("700", tSize);
         ctx.fillText("0928", w/2, h * 0.5);
-        ctx.font = "bold 20px sans-serif";
+        const s4 = Math.max(12, Math.round(tSize * 0.36));
+        setFont("bold", s4);
         ctx.fillText("162", w/2, h * 0.15);
         ctx.fillText("2560", w/2, h * 0.85);
     } else if (styleId === 'style5') {
-        ctx.font = "700 84px sans-serif";
-        ctx.fillText("0928", w/2, h * 0.85);
-        ctx.font = "500 20px sans-serif";
-        ctx.fillText("AM SAT 16", w/2, h * 0.76);
+        // Display 5 preview: place time/date near bottom-left like sample
+        ctx.textAlign = "left";
+        const left = padX + w * 0.10;
+        const maxW5 = w - left - padX;
+        const timeSize5 = fitted("0928", "700", h * 0.17, maxW5);
+        const dateSize5 = Math.max(12, Math.round(timeSize5 * 0.22));
+        setFont("500", dateSize5);
+        ctx.fillText("AM  SAT  16", left, h * 0.76);
+        setFont("700", timeSize5);
+        ctx.fillText("0928", left, h * 0.88);
+        ctx.textAlign = "center";
     }
     ctx.restore();
 }
@@ -261,20 +291,52 @@ export default function CanvasEditor({ template, registerExport }) {
     try { localStorage.setItem("xiaomi_editor_state", JSON.stringify(state)); } catch (e) {}
   }, [layers, assets, bgColor, isLoaded]);
 
+  // Measure text for selection/resize handles
+  const measureTextBox = useCallback((text, fontSize, fontWeight) => {
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    try { ctx.font = `${fontWeight || '700'} ${fontSize || 48}px sans-serif`; } catch (e) {}
+    const m = ctx.measureText(text || '');
+    const width = Math.max(1, Math.ceil(m.width || (fontSize || 48) * (String(text||'').length * 0.6)));
+    const ascent = m.actualBoundingBoxAscent || (fontSize || 48) * 0.8;
+    const descent = m.actualBoundingBoxDescent || (fontSize || 48) * 0.25;
+    const height = Math.max(1, Math.ceil(ascent + descent));
+    return { width, height };
+  }, []);
+
   const addLayer = useCallback((layerProps) => {
+    // If text layer, attach width/height so it can be picked/resized like images
+    let finalProps = layerProps;
+    if (layerProps?.type === 'text' || layerProps?.type === 'clock') {
+      const { width, height } = measureTextBox(layerProps.text || '', layerProps.fontSize, layerProps.fontWeight);
+      finalProps = { width, height, ...layerProps };
+    }
     const newLayer = {
       id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       x: w / 2, y: h / 2, scaleX: 1, scaleY: 1, rotation: 0, opacity: 1, locked: false, hidden: false,
       brightness: 100, contrast: 100, saturate: 100, grayscale: 0,
-      ...layerProps
+      ...finalProps
     };
     setLayers(prev => { const next = [...prev, newLayer]; setTimeout(recordHistory, 0); return next; });
     setSelectedId(newLayer.id);
-  }, [w, h, recordHistory]);
+  }, [w, h, recordHistory, measureTextBox]);
 
   const updateLayer = useCallback((id, patch, save = false) => {
-    setLayers(prev => { const next = prev.map(l => (l.id === id ? { ...l, ...patch } : l)); if (save) setTimeout(recordHistory, 0); return next; });
-  }, [recordHistory]);
+    setLayers(prev => {
+      const next = prev.map(l => {
+        if (l.id !== id) return l;
+        let merged = { ...l, ...patch };
+        // Keep text layer bbox up-to-date so hit-testing and handles work
+        if ((merged.type === 'text' || merged.type === 'clock') && (patch.text !== undefined || patch.fontSize !== undefined || patch.fontWeight !== undefined)) {
+          const mb = measureTextBox(merged.text || '', merged.fontSize, merged.fontWeight);
+          merged.width = mb.width; merged.height = mb.height;
+        }
+        return merged;
+      });
+      if (save) setTimeout(recordHistory, 0);
+      return next;
+    });
+  }, [recordHistory, measureTextBox]);
 
   const updateSelected = useCallback((patch, save = false) => { if (selectedId) updateLayer(selectedId, patch, save); }, [selectedId, updateLayer]);
 
@@ -394,9 +456,9 @@ export default function CanvasEditor({ template, registerExport }) {
       const L = layers.find(l => l.id === selectedId);
       if (L && !L.hidden) {
         ctx.save(); ctx.translate(L.x, L.y); ctx.rotate(deg2rad(L.rotation));
+        // Compute selection rectangle size accounting for scale
         let cw = L.width * L.scaleX, ch = L.height * L.scaleY;
-        if (L.type === 'image' && L.crop) { cw = L.width * L.crop.w * L.scaleX; ch = L.height * L.crop.h * L.scaleY; }
-        else if (L.type === 'text' || L.type === 'clock') { ctx.font = `${L.fontWeight||700} ${L.fontSize||48}px sans-serif`; const m = ctx.measureText(L.text); cw = m.width; ch = L.fontSize; }
+        if (L.type === 'image' && L.crop) { cw = L.width * (L.crop.w || 1) * L.scaleX; ch = L.height * (L.crop.h || 1) * L.scaleY; }
         ctx.strokeStyle = "#8b5cf6"; ctx.lineWidth = 2; ctx.setLineDash([4, 2]); ctx.strokeRect(-cw / 2, -ch / 2, cw, ch); ctx.restore();
         const handles = getHandleCoords(L); ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#8b5cf6"; ctx.lineWidth = 2;
         for (const k in handles) { ctx.beginPath(); ctx.arc(handles[k].x, handles[k].y, 6, 0, Math.PI*2); ctx.fill(); ctx.stroke(); }
@@ -437,6 +499,26 @@ export default function CanvasEditor({ template, registerExport }) {
 
   const selectedLayer = layers.find(l => l.id === selectedId);
   const [showFilters, setShowFilters] = useState(false);
+  const [draggingLayerId, setDraggingLayerId] = useState(null);
+  const [dragOverLayerId, setDragOverLayerId] = useState(null);
+
+  const handleLayerDrop = useCallback((targetId) => {
+    setLayers(prev => {
+      const view = prev.slice().reverse();
+      const fromRev = view.findIndex(l => l.id === draggingLayerId);
+      const toRev = view.findIndex(l => l.id === targetId);
+      if (fromRev === -1 || toRev === -1 || fromRev === toRev) return prev;
+      const from = prev.length - 1 - fromRev;
+      const to = prev.length - 1 - toRev;
+      const next = prev.slice();
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      setTimeout(recordHistory, 0);
+      return next;
+    });
+    setDragOverLayerId(null);
+    setDraggingLayerId(null);
+  }, [draggingLayerId, recordHistory]);
 
   return (
     <div className="flex-1 flex overflow-hidden">
@@ -489,9 +571,22 @@ export default function CanvasEditor({ template, registerExport }) {
           )}
           {activeTab === "layout" && (
              <div className="animate-in fade-in duration-300">
-                <h2 className="panel-header">プレビュー (ガイド)</h2>
+                <h2 className="panel-header">プレビュー</h2>
                 <p className="text-xs text-gray-500 mb-3">実際の時刻表示イメージを確認できます。この文字は画像には書き出されません。</p>
-                <div className="grid grid-cols-2 gap-2">{LAYOUT_STYLES.map(style => (<button key={style.id} onClick={() => setPreviewLayout(style.id === 'none' ? null : style.id)} className={`p-3 rounded-lg border text-left text-sm ${previewLayout === style.id || (style.id==='none' && !previewLayout) ? 'border-violet-500 bg-violet-50 text-violet-700 font-bold' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}>{style.label}</button>))}</div>
+                <div className="grid grid-cols-2 gap-3">
+                  {LAYOUT_STYLES.map(style => (
+                    <button
+                      key={style.id}
+                      onClick={() => setPreviewLayout(style.id === 'none' ? null : style.id)}
+                      className={`p-3 rounded-lg border text-center text-sm flex flex-col items-center ${previewLayout === style.id || (style.id==='none' && !previewLayout) ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}
+                    >
+                      <div className="w-20">{/* thumbnail */}
+                        <LayoutPreviewThumb styleId={style.id} template={template} />
+                      </div>
+                      <div className="mt-2 w-24 whitespace-nowrap text-xs">{style.label}</div>
+                    </button>
+                  ))}
+                </div>
              </div>
           )}
           {activeTab === "layers" && (
@@ -499,7 +594,16 @@ export default function CanvasEditor({ template, registerExport }) {
                 <h2 className="panel-header">レイヤー</h2>
                 <div className="space-y-2">
                     {layers.slice().reverse().map(layer => (
-                        <div key={layer.id} className={`flex items-center gap-2 p-2 rounded border cursor-pointer ${selectedId === layer.id ? 'border-violet-500 bg-violet-50' : 'border-gray-200 hover:bg-gray-50'}`} onClick={()=>setSelectedId(layer.id)}>
+                        <div
+                          key={layer.id}
+                          draggable
+                          onDragStart={(e)=>{ setDraggingLayerId(layer.id); e.dataTransfer.effectAllowed='move'; }}
+                          onDragOver={(e)=>{ e.preventDefault(); setDragOverLayerId(layer.id); }}
+                          onDragLeave={()=>{ setDragOverLayerId(null); }}
+                          onDrop={(e)=>{ e.preventDefault(); handleLayerDrop(layer.id); }}
+                          className={`flex items-center gap-2 p-2 rounded border cursor-move select-none ${selectedId === layer.id ? 'border-violet-500 bg-violet-50' : 'border-gray-200 hover:bg-gray-50'} ${dragOverLayerId===layer.id ? 'ring-2 ring-violet-400' : ''}`}
+                          onClick={()=>setSelectedId(layer.id)}
+                        >
                             <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center shrink-0 text-xs overflow-hidden">
                                 {layer.type === 'image' && layer.src && <img src={layer.src} className="w-full h-full object-cover" alt="" />}
                                 {layer.type === 'text' && 'T'}
@@ -568,6 +672,37 @@ export default function CanvasEditor({ template, registerExport }) {
       {bgRemovingLayerId && layers.find(l=>l.id===bgRemovingLayerId) && ( <RemoveBgModal layer={layers.find(l=>l.id===bgRemovingLayerId)} onClose={()=>setBgRemovingLayerId(null)} onSave={(newImg, newUrl) => { updateLayer(bgRemovingLayerId, { image: newImg, src: newUrl }, true); setBgRemovingLayerId(null); }} /> )}
     </div>
   );
+}
+
+// Small thumbnail renderer for the layout list
+function LayoutPreviewThumb({ styleId, template }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const ratio = template.canvas.h / template.canvas.w;
+    const W = 80; const H = Math.round(W * ratio);
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+    const r = getCornerRadiusPx(W, H, template);
+    // Outer ring
+    ctx.save();
+    drawRoundedRectPath(ctx, 0, 0, W, H, r);
+    ctx.fillStyle = '#0b0f17';
+    ctx.fill();
+    ctx.restore();
+    // Inner bevel ring
+    ctx.save();
+    ctx.strokeStyle = '#1f2937';
+    ctx.lineWidth = 4;
+    drawRoundedRectPath(ctx, 2, 2, W-4, H-4, Math.max(0, r-2));
+    ctx.stroke();
+    ctx.restore();
+    if (styleId && styleId !== 'none') {
+      drawLayoutPreview(ctx, W, H, styleId);
+    }
+  }, [styleId, template]);
+  return (<canvas ref={ref} className="w-full h-auto block" />);
 }
 
 function CropModal({ layer, onClose, onSave }) {
