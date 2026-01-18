@@ -1,5 +1,15 @@
 // Device template definitions. Safe inset is conservative and to be tuned.
-export const TEMPLATES = [
+export type Template = {
+  id: string;
+  label: string;
+  device: string;
+  canvas: { w: number; h: number };
+  safeInset: { top: number; right: number; bottom: number; left: number };
+  cornerRadius: 'pill' | number;
+  notes?: string;
+};
+
+export const TEMPLATES: Template[] = [
   {
     id: "band10",
     label: "Xiaomi Smart Band 10",

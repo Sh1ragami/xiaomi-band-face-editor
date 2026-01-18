@@ -1,6 +1,13 @@
 import React from "react";
 
-export default function NavButton({ icon: IconComp, label, active, onClick }) {
+type Props = {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  active?: boolean;
+  onClick?: () => void;
+};
+
+export default function NavButton({ icon: IconComp, label, active, onClick }: Props) {
   return (
     <button 
       onClick={onClick} 
@@ -11,3 +18,4 @@ export default function NavButton({ icon: IconComp, label, active, onClick }) {
     </button>
   );
 }
+
