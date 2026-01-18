@@ -339,7 +339,14 @@ export default function CanvasEditor({ template, registerExport }: { template: T
           {activeTab === "text" && (<TextPanel onAdd={(p)=>addLayer({ ...p, x: w/2, y: h/2 })} />)}
           {activeTab === "elements" && (<ElementsPanel onAdd={(p)=>addLayer({ ...p, x: w/2, y: h/2 })} />)}
           {activeTab === "background" && (<BackgroundPanel value={bgColor} onChange={(c)=>{ setBgColor(c); setTimeout(recordHistory,0); }} />)}
-          {activeTab === "layout" && (<PreviewPanel styles={LAYOUT_STYLES} selected={previewLayout} onSelect={setPreviewLayout} template={template} />)}
+          {activeTab === "layout" && (
+            <PreviewPanel
+              styles={LAYOUT_STYLES}
+              selected={previewLayout}
+              onSelect={(id) => setPreviewLayout((id ?? null) as LayoutStyleId | null)}
+              template={template}
+            />
+          )}
           {activeTab === "layers" && (
             <LayerList
               layers={layers}

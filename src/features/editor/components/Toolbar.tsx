@@ -26,12 +26,15 @@ export default function Toolbar({ selectedLayer, updateSelected, setCroppingLaye
           <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${showFilters ? 'bg-violet-100 text-violet-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}><PaletteIcon className="w-4 h-4" /><span>色調整</span></button>
           {showFilters && (
             <div className="absolute top-12 left-64 bg-white shadow-xl border border-gray-200 rounded-lg p-4 z-50 flex flex-col gap-3 min-w-[200px]">
-              {['brightness','contrast','saturate'].map((f) => (
-                <div key={f}>
-                  <div className="flex justify-between text-xs text-gray-500 mb-1"><span className="capitalize">{f}</span><span>{(selectedLayer as Record<string, number>)[f]||100}%</span></div>
-                  <input type="range" min="0" max="200" value={(selectedLayer as Record<string, number>)[f]||100} onChange={(e)=>updateSelected({[f]: parseInt((e.target as HTMLInputElement).value)} as unknown as Partial<Layer>, true)} className="w-full accent-violet-600" />
-                </div>
-              ))}
+              {['brightness','contrast','saturate'].map((f) => {
+                const val = (selectedLayer as any)[f] ?? 100;
+                return (
+                  <div key={f}>
+                    <div className="flex justify-between text-xs text-gray-500 mb-1"><span className="capitalize">{f}</span><span>{val}%</span></div>
+                    <input type="range" min="0" max="200" value={val} onChange={(e)=>updateSelected({[f]: parseInt((e.target as HTMLInputElement).value)} as any, true)} className="w-full accent-violet-600" />
+                  </div>
+                );
+              })}
               <div>
                 <div className="flex justify-between text-xs text-gray-500 mb-1"><span>Grayscale</span><span>{selectedLayer.grayscale||0}%</span></div>
                 <input type="range" min="0" max="100" value={selectedLayer.grayscale||0} onChange={(e)=>updateSelected({grayscale: parseInt((e.target as HTMLInputElement).value)}, true)} className="w-full accent-violet-600" />
