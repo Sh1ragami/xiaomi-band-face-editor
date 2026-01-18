@@ -1,5 +1,5 @@
 import type { Template } from "./templates";
-import type { Layer, ImageLayer } from "./types";
+import type { Layer, ImageLayer, TextLayer } from "./types";
 
 export function drawRoundedRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   const radius = Math.min(r, w / 2, h / 2);
@@ -154,19 +154,81 @@ export function contentSize(L: Layer) {
   return { w: L.width || 0, h: L.height || 0 };
 }
 
-// Selection rectangle size in world space (applies scale)
+// Size of the selection box in world space (includes scale and crop)
 export function selectionSize(L: Layer) {
-  const s = contentSize(L);
-  return { w: s.w * (L.scaleX || 1), h: s.h * (L.scaleY || 1) };
+  const c = contentSize(L);
+  const sx = L.scaleX || 1;
+  const sy = L.scaleY || 1;
+  return { w: Math.max(1, c.w * sx), h: Math.max(1, c.h * sy) };
 }
 
-export type HandleKey = 'tl'|'t'|'tr'|'r'|'br'|'b'|'bl'|'l';
+// Apply shadow/stroke settings to context
+export function applyDecorations(ctx: CanvasRenderingContext2D, L: Layer) {
+  if (L.shadow?.enabled) {
+    ctx.shadowColor = L.shadow.color;
+    ctx.shadowBlur = L.shadow.blur;
+    ctx.shadowOffsetX = L.shadow.offsetX;
+    ctx.shadowOffsetY = L.shadow.offsetY;
+  } else {
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+  }
+}
+
+export function drawText(ctx: CanvasRenderingContext2D, L: TextLayer) {
+  const { text = '', fontSize = 48, fontWeight = '700', color = '#ffffff', curve } = L;
+  ctx.font = `${fontWeight} ${fontSize}px sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  if (curve?.enabled && curve.radius !== 0) {
+    const chars = text.split('');
+    const anglePerChar = (fontSize * (1 + curve.spacing / 100)) / curve.radius;
+    const totalAngle = anglePerChar * (chars.length - 1);
+    
+    ctx.save();
+    // Move to center of curve
+    ctx.translate(0, curve.radius);
+    ctx.rotate(-totalAngle / 2);
+
+    chars.forEach((char, i) => {
+      ctx.save();
+      ctx.translate(0, -curve.radius);
+      
+      // Draw Stroke
+      if (L.stroke?.enabled) {
+        ctx.strokeStyle = L.stroke.color;
+        ctx.lineWidth = L.stroke.width;
+        ctx.strokeText(char, 0, 0);
+      }
+      // Draw Fill
+      ctx.fillText(char, 0, 0);
+      
+      ctx.restore();
+      ctx.rotate(anglePerChar);
+    });
+    ctx.restore();
+  } else {
+    // Standard Draw
+    if (L.stroke?.enabled) {
+      ctx.strokeStyle = L.stroke.color;
+      ctx.lineWidth = L.stroke.width;
+      ctx.strokeText(text, 0, 0);
+    }
+    ctx.fillText(text, 0, 0);
+  }
+}
+
+export type HandleKey = 'tl'|'t'|'tr'|'r'|'br'|'b'|'bl'|'l'|'rot';
 export function getHandleCoords(L: Layer) {
   const sz = selectionSize(L);
   const hw = sz.w / 2, hh = sz.h / 2;
+  const rotDist = 30; // Handle distance for rotation
   const bounds: Record<HandleKey, {x:number;y:number}> = {
     tl: {x:-hw, y:-hh}, t:{x:0, y:-hh}, tr:{x:hw, y:-hh}, r:{x:hw, y:0},
-    br:{x:hw, y:hh}, b:{x:0, y:hh}, bl:{x:-hw, y:hh}, l:{x:-hw, y:0}
+    br:{x:hw, y:hh}, b:{x:0, y:hh}, bl:{x:-hw, y:hh}, l:{x:-hw, y:0},
+    rot: {x:0, y:-hh - rotDist}
   };
   const world = {} as Record<HandleKey, {x:number;y:number}>;
   (Object.keys(bounds) as HandleKey[]).forEach((k) => {

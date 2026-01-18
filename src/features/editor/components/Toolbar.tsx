@@ -7,12 +7,13 @@ type Props = {
   updateSelected: (patch: Partial<Layer>, save?: boolean) => void;
   setCroppingLayerId: (id: string | null) => void;
   setBgRemovingLayerId: (id: string | null) => void;
+  openEffectsPanel: () => void;
   showFilters: boolean;
   setShowFilters: (v: boolean) => void;
   deleteSelected: () => void;
 };
 
-export default function Toolbar({ selectedLayer, updateSelected, setCroppingLayerId, setBgRemovingLayerId, showFilters, setShowFilters, deleteSelected }: Props) {
+export default function Toolbar({ selectedLayer, updateSelected, setCroppingLayerId, setBgRemovingLayerId, openEffectsPanel, showFilters, setShowFilters, deleteSelected }: Props) {
   if (!selectedLayer) return null;
   return (
     <div className="flex items-center gap-4 animate-in fade-in duration-200 w-full">
@@ -56,6 +57,14 @@ export default function Toolbar({ selectedLayer, updateSelected, setCroppingLaye
           {selectedLayer.type === 'text' && (
             <input type="text" value={(selectedLayer as TextLayer).text || ''} onChange={(e)=>updateSelected({text: (e.target as HTMLInputElement).value}, true)} className="bg-gray-100 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-violet-500 outline-none w-40" placeholder="テキスト..." />
           )}
+          <button onClick={openEffectsPanel} className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium bg-violet-600 text-white hover:bg-violet-700 transition-colors shadow-sm"><MagicWandIcon className="w-4 h-4" /><span>エフェクト</span></button>
+        </>
+      )}
+
+      {(selectedLayer.type === 'rect' || selectedLayer.type === 'circle') && (
+        <>
+          <input type="color" value={(selectedLayer as any).fill || '#ffffff'} onChange={(e)=>updateSelected({fill: (e.target as HTMLInputElement).value}, true)} className="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5" />
+          <button onClick={openEffectsPanel} className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"><MagicWandIcon className="w-4 h-4" /><span>編集</span></button>
         </>
       )}
 

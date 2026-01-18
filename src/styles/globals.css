@@ -10,6 +10,15 @@ body {
   @apply bg-slate-100 text-slate-800;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   text-shadow: 0 0 0 transparent; /* Dummy property to ensure PostCSS processing */
+  overflow: hidden; /* prevent page scroll bounce */
+}
+
+/* Prevent overscroll bounce/scroll chaining */
+html, body {
+  overscroll-behavior: none;
+}
+.thin-scrollbar {
+  overscroll-behavior: contain;
 }
 
 /* Custom Utilities */
