@@ -54,6 +54,17 @@ export default function Toolbar({ selectedLayer, updateSelected, setCroppingLaye
             <option value="700">Bold</option>
             <option value="900">Black</option>
           </select>
+          <select value={(selectedLayer as TextLayer).fontFamily || 'sans-serif'} onChange={(e)=>updateSelected({fontFamily: (e.target as HTMLSelectElement).value}, true)} className="bg-gray-100 rounded-md px-2 py-1 text-sm font-medium focus:outline-none border-none cursor-pointer">
+            <option value="sans-serif">Sans</option>
+            <option value="system-ui">System UI</option>
+            <option value="serif">Serif</option>
+            <option value="monospace">Monospace</option>
+            <option value="'Inter', system-ui, sans-serif">Inter</option>
+            <option value="'Noto Sans JP', sans-serif">Noto Sans JP</option>
+            <option value="'Arial', sans-serif">Arial</option>
+            <option value="'Times New Roman', serif">Times New Roman</option>
+            <option value="'Courier New', monospace">Courier New</option>
+          </select>
           {selectedLayer.type === 'text' && (
             <input type="text" value={(selectedLayer as TextLayer).text || ''} onChange={(e)=>updateSelected({text: (e.target as HTMLInputElement).value}, true)} className="bg-gray-100 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-violet-500 outline-none w-40" placeholder="テキスト..." />
           )}

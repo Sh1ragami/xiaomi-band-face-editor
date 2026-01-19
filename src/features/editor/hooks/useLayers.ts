@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { Layer, TextLayer } from '@/shared/types';
 
-type MeasureFn = (text?: string, fontSize?: number, fontWeight?: string) => { width: number; height: number };
+type MeasureFn = (text?: string, fontSize?: number, fontWeight?: string, fontFamily?: string) => { width: number; height: number };
 
 export default function useLayers(
   layers: Layer[],
@@ -17,7 +17,7 @@ export default function useLayers(
     let width = props.width ?? 0;
     let height = props.height ?? 0;
     if ((props.type === 'text' || props.type === 'clock')) {
-      const { width: w, height: h } = measureTextBox((props as TextLayer).text || '', (props as TextLayer).fontSize ?? 48, (props as TextLayer).fontWeight ?? '700');
+      const { width: w, height: h } = measureTextBox((props as TextLayer).text || '', (props as TextLayer).fontSize ?? 48, (props as TextLayer).fontWeight ?? '700', (props as TextLayer).fontFamily ?? 'sans-serif');
       width = w; height = h;
     }
     const newLayer: Layer = {
@@ -49,8 +49,8 @@ export default function useLayers(
       const next = prev.map(l => {
         if (l.id !== id) return l;
         const merged = { ...l, ...patch } as Layer;
-        if ((merged.type === 'text' || merged.type === 'clock') && ('text' in patch || 'fontSize' in patch || 'fontWeight' in patch)) {
-          const mb = measureTextBox((merged as TextLayer).text || '', (merged as TextLayer).fontSize ?? 48, (merged as TextLayer).fontWeight ?? '700');
+        if ((merged.type === 'text' || merged.type === 'clock') && ('text' in patch || 'fontSize' in patch || 'fontWeight' in patch || 'fontFamily' in patch)) {
+          const mb = measureTextBox((merged as TextLayer).text || '', (merged as TextLayer).fontSize ?? 48, (merged as TextLayer).fontWeight ?? '700', (merged as TextLayer).fontFamily ?? 'sans-serif');
           merged.width = mb.width; merged.height = mb.height;
         }
         return merged;

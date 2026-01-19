@@ -39,6 +39,7 @@ export type TextLayer = BaseLayer & {
   text?: string; 
   fontSize?: number; 
   fontWeight?: string; 
+  fontFamily?: string;
   color?: string;
   curve?: TextCurveSettings;
 };
