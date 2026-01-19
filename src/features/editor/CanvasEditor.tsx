@@ -109,6 +109,7 @@ export default function CanvasEditor({ template, registerExport }: { template: T
   const VIEW_MAX = Infinity; // no upper limit
   const ZOOM_SENSITIVITY = 0.006; // higher sensitivity
   const autoFitRef = useRef(true);
+  const INITIAL_FIT_SHRINK = 0.94; // show a bit more room on first render
   const lastGestureScaleRef = useRef(1);
   const viewScaleRef = useRef(1);
   const spacePressedRef = useRef(false);
@@ -351,10 +352,11 @@ export default function CanvasEditor({ template, registerExport }: { template: T
       // Fit to the face area so it uses full space; margin remains offscreen editing buffer
       const fit = Math.max(0.05, Math.min(clientWidth / w, clientHeight / h));
       if (autoFitRef.current) {
-        setViewScale(fit);
-        // Center the stage for initial fit
-        setPanX((clientWidth - fit * (w + CANVAS_MARGIN*2)) / 2);
-        setPanY((clientHeight - fit * (h + CANVAS_MARGIN*2)) / 2);
+        const s = fit * INITIAL_FIT_SHRINK;
+        setViewScale(s);
+        // Center the stage for initial fit (use scaled stage size)
+        setPanX((clientWidth - s * (w + CANVAS_MARGIN*2)) / 2);
+        setPanY((clientHeight - s * (h + CANVAS_MARGIN*2)) / 2);
       }
     });
     const el = fitRef.current as HTMLElement | null;
@@ -557,7 +559,7 @@ export default function CanvasEditor({ template, registerExport }: { template: T
         </div>
 
         <div
-          className="flex-1 relative overflow-hidden flex items-center justify-center p-0"
+          className="flex-1 relative overflow-hidden p-0"
           ref={fitRef}
           onPointerDown={(e)=>{
             if (e.button === 1 || spacePressedRef.current) {
@@ -590,8 +592,10 @@ export default function CanvasEditor({ template, registerExport }: { template: T
           style={{ cursor: panDragRef.current.active || spacePressedRef.current ? 'grabbing' : undefined }}
         >
            <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#4b5563 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-           <div className="relative" ref={stageRef} style={{ transform: `translate(${panX}px, ${panY}px) scale(${viewScale})`, transformOrigin: '0 0' }}>
-             <canvas ref={canvasRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerLeave={onPointerUp} className="relative touch-none cursor-grab active:cursor-grabbing" style={{ width: (w + CANVAS_MARGIN*2), height: (h + CANVAS_MARGIN*2), background: 'transparent' }} />
+           <div className="absolute left-0 top-0" ref={stageRef} style={{ transform: `translate(${panX}px, ${panY}px)` }}>
+             <div className="relative" style={{ transform: `scale(${viewScale})`, transformOrigin: '0 0' }}>
+               <canvas ref={canvasRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerLeave={onPointerUp} className="relative touch-none cursor-grab active:cursor-grabbing" style={{ width: (w + CANVAS_MARGIN*2), height: (h + CANVAS_MARGIN*2), background: 'transparent' }} />
+             </div>
            </div>
             <div className="absolute bottom-6 right-6 bg-white rounded-full shadow-lg border border-gray-100 p-1 flex items-center gap-2">
               <button onClick={() => { autoFitRef.current = false; setViewScale(s => Math.max(VIEW_MIN, s - 0.1)); }} className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 rounded-full text-gray-600" title="縮小">-</button>
