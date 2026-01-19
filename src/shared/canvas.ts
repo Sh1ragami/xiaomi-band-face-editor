@@ -305,14 +305,112 @@ export function drawLayoutPreview(ctx: CanvasRenderingContext2D, w: number, h: n
     ctx.restore();
 
   } else if (styleId === 'style4') {
-    const maxW = w - padX * 2;
-    const tSize = fitted("0928", "700", h * 0.13, maxW);
-    setFont("700", tSize);
-    ctx.fillText("0928", w/2, h * 0.5);
-    const s4 = Math.max(12, Math.round(tSize * 0.36));
-    setFont("bold", s4);
-    ctx.fillText("162", w/2, h * 0.15);
-    ctx.fillText("2560", w/2, h * 0.85);
+    // 1. Top Arc (Calories) - Slightly away from edge, even longer
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.lineWidth = 6; 
+    ctx.lineCap = "round";
+    
+    const arcR = w/2 - 12; // Moved away from edge (from -8)
+    const cornerR = w/2;
+    const topCy = cornerR; 
+    
+    ctx.beginPath();
+    // Extended angles (approx -185 to 5 degrees)
+    ctx.arc(w/2, topCy, arcR, Math.PI * 1.02, Math.PI * 1.98); 
+    ctx.stroke();
+
+    // Flame Icon (Moved up)
+    const flameY = h * 0.08;
+    const flameSize = w * 0.04;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.moveTo(w/2, flameY - flameSize);
+    ctx.bezierCurveTo(w/2 + flameSize, flameY, w/2 + flameSize, flameY + flameSize, w/2, flameY + flameSize);
+    ctx.bezierCurveTo(w/2 - flameSize, flameY + flameSize, w/2 - flameSize, flameY, w/2, flameY - flameSize);
+    ctx.fill();
+    
+    // Calories Text
+    setFont("700", h * 0.055);
+    ctx.fillText("162", w/2, h * 0.14);
+    ctx.restore();
+
+    // 2. Bottom Arc (Steps) - Slightly away from edge, even longer
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.lineWidth = 6;
+    ctx.lineCap = "round";
+    
+    const botCy = h - cornerR;
+    ctx.beginPath();
+    // Extended angles
+    ctx.arc(w/2, botCy, arcR, Math.PI * 0.02, Math.PI * 0.98);
+    ctx.stroke();
+
+    // Steps Text (Moved down)
+    setFont("700", h * 0.055);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("2560", w/2, h * 0.86);
+
+    // Footsteps Icon (Larger)
+    const feetY = h * 0.92;
+    const footW = w * 0.02; 
+    const footH = w * 0.04; 
+    ctx.beginPath(); ctx.ellipse(w/2 - 9, feetY, footW, footH, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(w/2 + 9, feetY, footW, footH, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // 3. Center Cluster (Date, Time, Status) - Moved Up
+    const centerY = h * 0.48; 
+    
+    // Date (AM SAT 16) - Slightly smaller & moved closer to time
+    setFont("500", h * 0.045);
+    ctx.fillText("AM  SAT  16", w/2, centerY - h * 0.06); 
+
+    // Time (0928) - Slightly smaller & moved closer to date
+    setFont("500", h * 0.12); 
+    ctx.fillText("0928", w/2, centerY + h * 0.03); 
+
+    // Status Bar (Bluetooth & Battery) - Even Larger Icons
+    const statusY = centerY + h * 0.11;
+    const statusSize = w * 0.08; // Increased significantly (from 0.065)
+    
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.8)";
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    ctx.lineWidth = 1.6;
+    
+    // Bluetooth
+    const btX = w/2 - 5; // Shifted left (from +5)
+    const btH = statusSize * 0.8;
+    ctx.save();
+    ctx.translate(btX, statusY);
+    ctx.beginPath();
+    ctx.moveTo(0, -btH/2);
+    ctx.lineTo(btH/3, 0);
+    ctx.lineTo(0, btH/2);
+    ctx.lineTo(0, -btH/2);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-btH/3, -btH/3);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-btH/3, btH/3);
+    ctx.stroke();
+    ctx.restore();
+
+    // Battery (Vertical Icon)
+    const battX = w/2 + 28; // Shifted left (from +38)
+    const battW = statusSize * 0.6;
+    const battH = statusSize * 0.9;
+    
+    ctx.strokeRect(battX, statusY - battH/2, battW, battH);
+    ctx.fillRect(battX + 2, statusY - battH/2 - 2, battW - 4, 2); 
+    ctx.fillRect(battX + 1.5, statusY + battH/2 - (battH * 0.7), battW - 3, battH * 0.7 - 1.5); 
+    
+    setFont("400", statusSize * 0.8);
+    ctx.textAlign = "left";
+    ctx.fillText("80%", battX + battW + 6, statusY + 2);
+    ctx.restore();
+
   } else if (styleId === 'style5') {
     ctx.textAlign = "left";
     const left = padX + w * 0.10;
