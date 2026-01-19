@@ -218,6 +218,7 @@ export default function CanvasEditor({ template, registerExport }: { template: T
   const VIEW_MAX = Infinity; // no upper limit
   const ZOOM_SENSITIVITY = 0.006; // higher sensitivity
   const autoFitRef = useRef(true);
+  const didAutoFitOnceRef = useRef(false);
   const INITIAL_FIT_SHRINK = 0.94; // show a bit more room on first render
   const lastGestureScaleRef = useRef(1);
   const viewScaleRef = useRef(1);
@@ -248,6 +249,9 @@ export default function CanvasEditor({ template, registerExport }: { template: T
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
+  // Mobile sidebar control
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   
   
 
@@ -325,6 +329,21 @@ export default function CanvasEditor({ template, registerExport }: { template: T
     const handleKeyDown = (evt: KeyboardEvent) => {
       if (editingTextId) return; // typing inside inline editor; do not handle global shortcuts
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((document.activeElement as HTMLElement).tagName)) return;
+      // Arrow key move selected layer
+      if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(evt.key)) {
+        if (!selectedId || croppingLayerId || bgRemovingLayerId) return;
+        const L = layers.find(l => l.id === selectedId);
+        if (!L || L.locked) return;
+        const step = evt.shiftKey ? 10 : 1;
+        let dx = 0, dy = 0;
+        if (evt.key === 'ArrowUp') dy = -step;
+        else if (evt.key === 'ArrowDown') dy = step;
+        else if (evt.key === 'ArrowLeft') dx = -step;
+        else if (evt.key === 'ArrowRight') dx = step;
+        updateLayer(selectedId, { x: L.x + dx, y: L.y + dy }, true);
+        evt.preventDefault();
+        return;
+      }
       if ((evt.ctrlKey || evt.metaKey) && evt.key === 'z') {
         if (evt.shiftKey) redo(); else undo(); evt.preventDefault();
       } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'y') {
@@ -344,6 +363,8 @@ export default function CanvasEditor({ template, registerExport }: { template: T
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [undo, redo, selectedId, croppingLayerId, bgRemovingLayerId, deleteSelected, copySelected, pasteFromClipboard, duplicateSelected, editingTextId]);
+
+
 
   useEffect(() => {
     try {
@@ -512,9 +533,14 @@ export default function CanvasEditor({ template, registerExport }: { template: T
       if (autoFitRef.current) {
         const s = fit * INITIAL_FIT_SHRINK;
         setViewScale(s);
-        // Center the stage for initial fit (use scaled stage size)
-        setPanX((clientWidth - s * (w + CANVAS_MARGIN*2)) / 2);
-        setPanY((clientHeight - s * (h + CANVAS_MARGIN*2)) / 2);
+        // Center only on first auto-fit to防止ジャンプ
+        if (!didAutoFitOnceRef.current) {
+          setPanX((clientWidth - s * (w + CANVAS_MARGIN*2)) / 2);
+          setPanY((clientHeight - s * (h + CANVAS_MARGIN*2)) / 2);
+          didAutoFitOnceRef.current = true;
+          // 初回オートフィット後は自動調整を停止（レイアウト変化で動かないように）
+          autoFitRef.current = false;
+        }
       }
     });
     const el = fitRef.current as HTMLElement | null;
@@ -645,7 +671,7 @@ export default function CanvasEditor({ template, registerExport }: { template: T
 
   return (
     <div className="flex-1 flex overflow-hidden">
-      <nav className="w-20 bg-white border-r border-gray-200 flex flex-col items-center py-4 gap-6 shrink-0 z-10">
+      <nav className="hidden md:flex w-20 bg-white border-r border-gray-200 flex-col items-center py-4 gap-6 shrink-0 z-10">
         <NavButton icon={UploadIcon} label="アップロード" active={activeTab === "upload"} onClick={() => setActiveTab("upload")} />
         <NavButton icon={TypeIcon} label="テキスト" active={activeTab === "text"} onClick={() => setActiveTab("text")} />
         <NavButton icon={ShapesIcon} label="素材" active={activeTab === "elements"} onClick={() => setActiveTab("elements")} />
@@ -654,7 +680,8 @@ export default function CanvasEditor({ template, registerExport }: { template: T
         <NavButton icon={LayersIcon} label="レイヤー" active={activeTab === "layers"} onClick={() => setActiveTab("layers")} />
       </nav>
 
-      <aside ref={asideRef} className="w-80 bg-white border-r border-gray-200 flex flex-col shrink-0 z-10 transition-all duration-300">
+      {/* Desktop sidebar */}
+      <aside ref={asideRef} className="hidden md:flex w-80 bg-white border-r border-gray-200 flex-col shrink-0 z-10 transition-all duration-300">
         <div className="p-5 flex-1 overflow-y-auto thin-scrollbar">
           {showEffectsPanel ? (
             <EffectsPanel selectedLayer={selectedLayer as Layer} updateSelected={updateSelected} onClose={() => setShowEffectsPanel(false)} />
@@ -691,18 +718,93 @@ export default function CanvasEditor({ template, registerExport }: { template: T
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col bg-slate-50 relative">
-        <div className="h-14 bg-white border-b border-gray-200 flex items-center px-4 gap-4 shrink-0 overflow-x-auto thin-scrollbar">
-          <Toolbar
-            selectedLayer={selectedLayer as Layer}
-            updateSelected={updateSelected}
-            setCroppingLayerId={setCroppingLayerId}
-            setBgRemovingLayerId={setBgRemovingLayerId}
-            openEffectsPanel={() => setShowEffectsPanel(true)}
-            showFilters={showFilters}
-            setShowFilters={setShowFilters}
-            deleteSelected={deleteSelected}
-          />
+      {/* Mobile sidebar overlay */}
+      {mobileSidebarOpen && (
+        <div className="md:hidden fixed inset-0 z-40">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileSidebarOpen(false)} />
+          <div className="absolute left-0 top-0 h-full w-80 max-w-[85vw] bg-white border-r border-gray-200 flex flex-col">
+            <div className="p-3 border-b border-gray-200 flex items-center gap-2">
+              <button className="px-3 py-1.5 rounded bg-gray-100 text-gray-700 text-sm" onClick={() => setMobileSidebarOpen(false)}>閉じる</button>
+              <select
+                className="ml-auto bg-gray-100 rounded px-2 py-1 text-sm"
+                value={activeTab}
+                onChange={(e)=>setActiveTab((e.target as HTMLSelectElement).value)}
+              >
+                <option value="upload">アップロード</option>
+                <option value="text">テキスト</option>
+                <option value="elements">素材</option>
+                <option value="background">背景</option>
+                <option value="layout">レイアウト</option>
+                <option value="layers">レイヤー</option>
+              </select>
+            </div>
+            <div className="p-4 flex-1 overflow-y-auto thin-scrollbar">
+              {showEffectsPanel ? (
+                <EffectsPanel selectedLayer={selectedLayer as Layer} updateSelected={updateSelected} onClose={() => setShowEffectsPanel(false)} />
+              ) : (
+                <>
+                  {activeTab === "upload" && (<UploadPanel assets={assets} onUpload={handleFileUpload} onAddImage={addImageToCanvas} />)}
+                  {activeTab === "text" && (<TextPanel onAdd={(p)=>addLayer({ ...p, x: w/2, y: h/2 })} />)}
+                  {activeTab === "elements" && (<ElementsPanel onAdd={(p)=>addLayer({ ...p, x: w/2, y: h/2 })} />)}
+                  {activeTab === "background" && (<BackgroundPanel value={bgColor} onChange={(c)=>{ setBgColor(c); setTimeout(recordHistory,0); }} />)}
+                  {activeTab === "layout" && (
+                    <PreviewPanel
+                      styles={LAYOUT_STYLES}
+                      selected={previewLayout}
+                      onSelect={(id) => setPreviewLayout((id ?? null) as LayoutStyleId | null)}
+                      template={template}
+                    />
+                  )}
+                  {activeTab === "layers" && (
+                    <LayerList
+                      layers={layers}
+                      selectedId={selectedId}
+                      onSelect={setSelectedId}
+                      onToggleHidden={(id)=>{ const target = layers.find(l=>l.id===id); if (!target) return; updateLayer(id, { hidden: !target.hidden }, true); }}
+                      onDelete={(id)=>{ setSelectedId(id); deleteSelected(); }}
+                      draggingLayerId={draggingLayerId}
+                      setDraggingLayerId={setDraggingLayerId}
+                      dragOverLayerId={dragOverLayerId}
+                      setDragOverLayerId={setDragOverLayerId}
+                      onDrop={handleLayerDrop}
+                    />
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <main className="flex-1 flex flex-col bg-slate-50 relative min-w-0 overflow-hidden">
+        <div
+          className="h-14 bg-white border-b border-gray-200 shrink-0 overflow-x-auto thin-scrollbar w-full"
+          ref={toolbarRef}
+        >
+          <div className="flex items-center px-4 gap-4 h-full min-w-full w-max">
+            {/* Mobile: open sidebar button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="bg-white border border-gray-200 rounded-lg shadow-sm px-2.5 py-2 text-gray-700 flex flex-col items-center justify-center"
+                title="メニュー"
+              >
+                <span className="block w-5 h-0.5 bg-gray-700 my-0.5"></span>
+                <span className="block w-5 h-0.5 bg-gray-700 my-0.5"></span>
+                <span className="block w-5 h-0.5 bg-gray-700 my-0.5"></span>
+              </button>
+            </div>
+            <Toolbar
+              selectedLayer={selectedLayer as Layer}
+              updateSelected={updateSelected}
+              setCroppingLayerId={setCroppingLayerId}
+              setBgRemovingLayerId={setBgRemovingLayerId}
+              openEffectsPanel={() => setShowEffectsPanel(true)}
+              showFilters={showFilters}
+              setShowFilters={setShowFilters}
+              deleteSelected={deleteSelected}
+            />
+          </div>
         </div>
 
         <div

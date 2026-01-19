@@ -20,13 +20,13 @@ export default function Home() {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-slate-100">
       <Head><title>Xiaomi Band Face Editor</title></Head>
-      <header className="h-14 bg-gradient-to-r from-violet-700 to-indigo-700 text-white flex items-center justify-between px-4 shadow-md z-20 shrink-0">
-        <div className="flex items-center gap-4">
-          <div className="font-bold text-lg tracking-tight">Xiaomi Band Face Editor</div>
-          <div className="h-6 w-px bg-white/20 mx-2"></div>
+      <header className="h-14 bg-gradient-to-r from-violet-700 to-indigo-700 text-white flex items-center justify-between px-3 sm:px-4 shadow-md z-20 shrink-0">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <div className="font-bold text-base sm:text-lg tracking-tight truncate">Xiaomi Band Face Editor</div>
+          <div className="h-6 w-px bg-white/20 mx-2 hidden sm:block"></div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-indigo-100 font-medium uppercase tracking-wider">Device:</span>
-            <select className="bg-white/10 hover:bg-white/20 text-sm border-none rounded px-3 py-1.5 focus:ring-2 focus:ring-white/50 cursor-pointer transition-colors" value={tplId} onChange={(e)=>setTplId(e.target.value)}>
+            <span className="hidden sm:inline text-xs text-indigo-100 font-medium uppercase tracking-wider">Device:</span>
+            <select className="bg-white/10 hover:bg-white/20 text-sm border-none rounded px-2 sm:px-3 py-1.5 focus:ring-2 focus:ring-white/50 cursor-pointer transition-colors" value={tplId} onChange={(e)=>setTplId(e.target.value)}>
               {TEMPLATES.map(t => (<option key={t.id} value={t.id} className="text-gray-900">{t.label}</option>))}
             </select>
           </div>
@@ -34,9 +34,9 @@ export default function Home() {
 
         <div className="flex items-center gap-3">
           <div className="relative">
-            <button className="flex items-center gap-2 px-4 py-1.5 rounded bg-white text-indigo-700 font-semibold text-sm hover:bg-indigo-50 transition-colors shadow-sm" onClick={()=>setShowExport(!showExport)}>
+            <button className="flex items-center gap-2 px-2.5 sm:px-4 py-1.5 rounded bg-white text-indigo-700 font-semibold text-sm hover:bg-indigo-50 transition-colors shadow-sm" onClick={()=>setShowExport(!showExport)}>
               <DownloadIcon className="w-4 h-4" />
-              <span>ダウンロード</span>
+              <span className="hidden sm:inline">ダウンロード</span>
             </button>
             {showExport && (
               <>
