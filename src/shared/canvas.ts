@@ -83,12 +83,81 @@ export function drawLayoutPreview(ctx: CanvasRenderingContext2D, w: number, h: n
 
   if (styleId === 'style1') {
     const maxW = w - padX * 2;
-    const timeSize = fitted("0928", "700", h * 0.18, maxW);
+    
+    // 1. Status Bar (Bluetooth & Battery) - Fine-tuned position and size
+    const statusSize = Math.round(w * 0.08); 
+    const statusY = h * 0.155; // Slightly lower (from 0.15)
+    setFont("400", statusSize);
+    
+    // Bluetooth Icon (Slightly smaller and moved right)
+    ctx.save();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "rgba(255,255,255,0.8)";
+    const btX = w/2 - statusSize * 1.0; // Moved right (from -1.3)
+    const btY = statusY;
+    const btH = statusSize * 0.65; // Smaller (from 0.8)
+    ctx.beginPath();
+    ctx.moveTo(btX - btH/2, btY - btH/2);
+    ctx.lineTo(btX + btH/2, btY + btH/2);
+    ctx.lineTo(btX, btY + btH);
+    ctx.lineTo(btX, btY - btH);
+    ctx.lineTo(btX + btH/2, btY - btH/2);
+    ctx.lineTo(btX - btH/2, btY + btH/2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Battery Icon & Text (Moved right)
+    ctx.textAlign = "left";
+    const battX = w/2 + statusSize * 0.7; // Moved right (from 0.4)
+    const battW = statusSize * 1.2;
+    const battH = statusSize * 0.6;
+    ctx.strokeStyle = "rgba(255,255,255,0.8)";
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(battX, statusY - battH/2, battW, battH);
+    ctx.fillRect(battX + battW, statusY - battH/4, 2, battH/2);
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    ctx.fillRect(battX + 1.5, statusY - battH/2 + 1.5, battW * 0.7, battH - 3);
+    ctx.fillText("80%", battX + battW + 5, statusY + 1);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffffff";
+
+    // 2. Time (09 outlined, 28 solid) - Moved up slightly
+    const timeY = h * 0.27; // Moved up slightly from 0.28
+    let timeSize = h * 0.11; 
+    
+    const hStr = "09";
+    const mStr = "28";
     setFont("700", timeSize);
-    ctx.fillText("0928", w/2, padY + timeSize * 0.7);
-    const dateSize = Math.max(12, Math.round(timeSize * 0.22));
-    setFont("500", dateSize);
-    ctx.fillText(date, w/2, padY + timeSize * 0.7 + dateSize * 1.5);
+    const hW = ctx.measureText(hStr).width;
+    const mW = ctx.measureText(mStr).width;
+    const spacing = timeSize * 0.12;
+    
+    ctx.save();
+    ctx.translate(w/2, timeY);
+    ctx.scale(0.9, 1.3); 
+    
+    // Hour (Outline)
+    ctx.save();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#ffffff";
+    ctx.strokeText(hStr, -(hW + mW + spacing)/2 + hW/2, 0);
+    ctx.restore();
+    
+    // Minute (Solid)
+    ctx.fillText(mStr, (hW + mW + spacing)/2 - mW/2, 0);
+    ctx.restore();
+
+    // 3. Date (AM SAT 16) - Bolder and wider spacing
+    const dateSize = timeSize * 0.38;
+    const dateY = timeY + timeSize * 0.92; 
+    
+    ctx.save();
+    ctx.translate(w/2, dateY);
+    ctx.scale(0.9, 1.3);
+    setFont("600", dateSize); // Bolder (600)
+    ctx.fillText("AM  SAT  16", 0, 0); // Double spaces for wider gap
+    ctx.restore();
+
   } else if (styleId === 'style2') {
     ctx.textAlign = "right";
     const colX = w - padX;
