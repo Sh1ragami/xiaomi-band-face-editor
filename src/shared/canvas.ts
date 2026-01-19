@@ -46,10 +46,10 @@ export const rotatePoint = (x: number, y: number, cx: number, cy: number, angleD
 export const unrotatePoint = (x: number, y: number, cx: number, cy: number, angleDeg: number) => rotatePoint(x, y, cx, cy, -angleDeg);
 
 // Measure text bounding box for given font settings
-export function measureTextBox(text: string, fontSize: number = 48, fontWeight: string = '700') {
+export function measureTextBox(text: string, fontSize: number = 48, fontWeight: string = '700', fontFamily: string = 'sans-serif') {
   const c = document.createElement('canvas');
   const ctx = c.getContext('2d')!;
-  try { ctx.font = `${fontWeight} ${fontSize}px sans-serif`; } catch (_) {}
+  try { ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`; } catch (_) {}
   const m = ctx.measureText(text || '');
   const width = Math.max(1, Math.ceil(m.width || fontSize * (String(text||'').length * 0.6)));
   const ascent = m.actualBoundingBoxAscent ?? fontSize * 0.8;
@@ -176,8 +176,8 @@ export function applyDecorations(ctx: CanvasRenderingContext2D, L: Layer) {
 }
 
 export function drawText(ctx: CanvasRenderingContext2D, L: TextLayer) {
-  const { text = '', fontSize = 48, fontWeight = '700', color = '#ffffff', curve } = L;
-  ctx.font = `${fontWeight} ${fontSize}px sans-serif`;
+  const { text = '', fontSize = 48, fontWeight = '700', fontFamily = 'sans-serif', color = '#ffffff', curve } = L;
+  ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
   ctx.fillStyle = color;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";

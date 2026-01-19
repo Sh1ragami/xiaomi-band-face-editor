@@ -22,7 +22,7 @@ export type TextCurveSettings = {
 
 export type BaseLayer = {
   id: string;
-  type: 'image' | 'text' | 'rect' | 'circle' | 'clock';
+  type: 'image' | 'text' | 'rect' | 'circle' | 'clock' | 'triangle' | 'line' | 'arrow' | 'star' | 'diamond' | 'polygon';
   x: number; y: number;
   scaleX: number; scaleY: number; rotation: number; opacity: number;
   locked: boolean; hidden: boolean;
@@ -39,11 +39,18 @@ export type TextLayer = BaseLayer & {
   text?: string; 
   fontSize?: number; 
   fontWeight?: string; 
+  fontFamily?: string;
   color?: string;
   curve?: TextCurveSettings;
 };
-export type RectLayer = BaseLayer & { type: 'rect'; width: number; height: number; fill: string; stroke?: StrokeSettings };
+export type RectLayer = BaseLayer & { type: 'rect'; width: number; height: number; fill: string; cornerRadius?: number; stroke?: StrokeSettings };
 export type CircleLayer = BaseLayer & { type: 'circle'; width: number; height: number; fill: string; stroke?: StrokeSettings };
-export type Layer = ImageLayer | TextLayer | RectLayer | CircleLayer;
+export type TriangleLayer = BaseLayer & { type: 'triangle'; width: number; height: number; fill: string; stroke?: StrokeSettings };
+export type LineLayer = BaseLayer & { type: 'line'; width: number; height: number; fill: string; rounded?: boolean; stroke?: StrokeSettings };
+export type PolygonLayer = BaseLayer & { type: 'polygon'; width: number; height: number; fill: string; sides: number; stroke?: StrokeSettings };
+export type ArrowLayer = BaseLayer & { type: 'arrow'; width: number; height: number; fill: string; headRatio?: number; shaftRatio?: number; stroke?: StrokeSettings };
+export type StarLayer = BaseLayer & { type: 'star'; width: number; height: number; fill: string; points?: number; innerRatio?: number; stroke?: StrokeSettings };
+export type DiamondLayer = BaseLayer & { type: 'diamond'; width: number; height: number; fill: string; cornerRadius?: number; stroke?: StrokeSettings };
+export type Layer = ImageLayer | TextLayer | RectLayer | CircleLayer | TriangleLayer | LineLayer | ArrowLayer | StarLayer | DiamondLayer | PolygonLayer;
 
 export type Asset = { id: string; name: string; image: HTMLImageElement; width: number; height: number; url: string; src: string };

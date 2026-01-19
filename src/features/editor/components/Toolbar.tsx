@@ -54,6 +54,17 @@ export default function Toolbar({ selectedLayer, updateSelected, setCroppingLaye
             <option value="700">Bold</option>
             <option value="900">Black</option>
           </select>
+          <select value={(selectedLayer as TextLayer).fontFamily || 'sans-serif'} onChange={(e)=>updateSelected({fontFamily: (e.target as HTMLSelectElement).value}, true)} className="bg-gray-100 rounded-md px-2 py-1 text-sm font-medium focus:outline-none border-none cursor-pointer">
+            <option value="sans-serif">Sans</option>
+            <option value="system-ui">System UI</option>
+            <option value="serif">Serif</option>
+            <option value="monospace">Monospace</option>
+            <option value="'Inter', system-ui, sans-serif">Inter</option>
+            <option value="'Noto Sans JP', sans-serif">Noto Sans JP</option>
+            <option value="'Arial', sans-serif">Arial</option>
+            <option value="'Times New Roman', serif">Times New Roman</option>
+            <option value="'Courier New', monospace">Courier New</option>
+          </select>
           {selectedLayer.type === 'text' && (
             <input type="text" value={(selectedLayer as TextLayer).text || ''} onChange={(e)=>updateSelected({text: (e.target as HTMLInputElement).value}, true)} className="bg-gray-100 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-violet-500 outline-none w-40" placeholder="テキスト..." />
           )}
@@ -61,7 +72,7 @@ export default function Toolbar({ selectedLayer, updateSelected, setCroppingLaye
         </>
       )}
 
-      {(selectedLayer.type === 'rect' || selectedLayer.type === 'circle') && (
+      {(selectedLayer.type === 'rect' || selectedLayer.type === 'circle' || selectedLayer.type === 'triangle' || selectedLayer.type === 'line' || selectedLayer.type === 'arrow' || selectedLayer.type === 'star' || selectedLayer.type === 'diamond' || selectedLayer.type === 'polygon') && (
         <>
           <input type="color" value={(selectedLayer as any).fill || '#ffffff'} onChange={(e)=>updateSelected({fill: (e.target as HTMLInputElement).value}, true)} className="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5" />
           <button onClick={openEffectsPanel} className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"><MagicWandIcon className="w-4 h-4" /><span>編集</span></button>

@@ -82,10 +82,16 @@ const drawLayer = (ctx: CanvasRenderingContext2D, L: Layer) => {
   } else if (L.type === "rect") { 
     const R = L as RectLayer; 
     ctx.fillStyle = R.fill; 
-    ctx.fillRect(-R.width/2, -R.height/2, R.width, R.height);
-    if (R.stroke?.enabled) {
-      ctx.strokeStyle = R.stroke.color; ctx.lineWidth = R.stroke.width;
-      ctx.strokeRect(-R.width/2, -R.height/2, R.width, R.height);
+    if (R.cornerRadius && R.cornerRadius > 0) {
+      drawRoundedRectPath(ctx, -R.width/2, -R.height/2, R.width, R.height, R.cornerRadius);
+      ctx.fill();
+      if (R.stroke?.enabled) { ctx.strokeStyle = R.stroke.color; ctx.lineWidth = R.stroke.width; ctx.stroke(); }
+    } else {
+      ctx.fillRect(-R.width/2, -R.height/2, R.width, R.height);
+      if (R.stroke?.enabled) {
+        ctx.strokeStyle = R.stroke.color; ctx.lineWidth = R.stroke.width;
+        ctx.strokeRect(-R.width/2, -R.height/2, R.width, R.height);
+      }
     }
   } else if (L.type === "circle") { 
     const C = L as CircleLayer; 
@@ -93,6 +99,109 @@ const drawLayer = (ctx: CanvasRenderingContext2D, L: Layer) => {
     if (C.stroke?.enabled) {
       ctx.strokeStyle = C.stroke.color; ctx.lineWidth = C.stroke.width; ctx.stroke();
     }
+  } else if (L.type === "triangle") {
+    const T = L as any; // TriangleLayer
+    const w2 = (T.width || 0) / 2; const h2 = (T.height || 0) / 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -h2);
+    ctx.lineTo(w2, h2);
+    ctx.lineTo(-w2, h2);
+    ctx.closePath();
+    ctx.fillStyle = T.fill; ctx.fill();
+    if (T.stroke?.enabled) { ctx.strokeStyle = T.stroke.color; ctx.lineWidth = T.stroke.width; ctx.stroke(); }
+  } else if (L.type === "line") {
+    const LN = L as any; // LineLayer
+    const length = LN.width || 100; const thick = Math.max(1, LN.height || 4);
+    ctx.fillStyle = LN.fill;
+    if (LN.rounded) {
+      drawRoundedRectPath(ctx, -length/2, -thick/2, length, thick, thick/2);
+      ctx.fill();
+      if (LN.stroke?.enabled) { ctx.strokeStyle = LN.stroke.color; ctx.lineWidth = LN.stroke.width; ctx.stroke(); }
+    } else {
+      ctx.fillRect(-length/2, -thick/2, length, thick);
+      if (LN.stroke?.enabled) { ctx.strokeStyle = LN.stroke.color; ctx.lineWidth = LN.stroke.width; ctx.strokeRect(-length/2, -thick/2, length, thick); }
+    }
+  } else if (L.type === "arrow") {
+    const A = L as any; // ArrowLayer
+    const w = A.width || 120; const h = A.height || 60;
+    const headRatio = Math.min(0.8, Math.max(0.1, A.headRatio ?? 0.32));
+    const shaftRatio = Math.min(1, Math.max(0.05, A.shaftRatio ?? 0.35));
+    const headLen = w * headRatio;
+    const shaftLen = w - headLen;
+    const shaftThick = h * shaftRatio;
+    // Shaft
+    ctx.fillStyle = A.fill;
+    ctx.fillRect(-w/2, -shaftThick/2, shaftLen, shaftThick);
+    // Head
+    ctx.beginPath();
+    ctx.moveTo(w/2, 0);
+    ctx.lineTo(w/2 - headLen, -h/2);
+    ctx.lineTo(w/2 - headLen, h/2);
+    ctx.closePath();
+    ctx.fill();
+    if (A.stroke?.enabled) { ctx.strokeStyle = A.stroke.color; ctx.lineWidth = A.stroke.width; ctx.stroke(); }
+  } else if (L.type === "star") {
+    const S = L as any; // StarLayer
+    const points = Math.max(3, Math.min(12, S.points ?? 5));
+    const inner = Math.max(0.1, Math.min(0.9, S.innerRatio ?? 0.5));
+    const rx = (S.width || 100) / 2;
+    const ry = (S.height || 100) / 2;
+    ctx.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+      const r = (i % 2 === 0) ? 1 : inner;
+      const a = (Math.PI * i) / points - Math.PI / 2;
+      const x = Math.cos(a) * rx * r;
+      const y = Math.sin(a) * ry * r;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = S.fill; ctx.fill();
+    if (S.stroke?.enabled) { ctx.strokeStyle = S.stroke.color; ctx.lineWidth = S.stroke.width; ctx.stroke(); }
+  } else if (L.type === "diamond") {
+    const D = L as any; const w2 = (D.width || 100) / 2; const h2 = (D.height || 100) / 2;
+    const rIn = Math.max(0, D.cornerRadius || 0);
+    const maxR = Math.min(w2, h2) * 0.8;
+    const r = Math.min(rIn, maxR);
+    const pts = [ {x:0,y:-h2}, {x:w2,y:0}, {x:0,y:h2}, {x:-w2,y:0} ];
+    ctx.beginPath();
+    if (r <= 0) {
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.closePath();
+    } else {
+      for (let i=0;i<pts.length;i++) {
+        const p0 = pts[(i+pts.length-1)%pts.length];
+        const p1 = pts[i];
+        const p2 = pts[(i+1)%pts.length];
+        const v01x = p1.x - p0.x; const v01y = p1.y - p0.y;
+        const v12x = p2.x - p1.x; const v12y = p2.y - p1.y;
+        const len01 = Math.hypot(v01x, v01y); const len12 = Math.hypot(v12x, v12y);
+        const rr = Math.min(r, len01/2, len12/2);
+        const ux = v01x/len01, uy = v01y/len01;
+        const vx = v12x/len12, vy = v12y/len12;
+        const pA = { x: p1.x - ux*rr, y: p1.y - uy*rr };
+        const pB = { x: p1.x + vx*rr, y: p1.y + vy*rr };
+        if (i===0) ctx.moveTo(pA.x, pA.y); else ctx.lineTo(pA.x, pA.y);
+        ctx.arcTo(p1.x, p1.y, pB.x, pB.y, rr);
+      }
+      ctx.closePath();
+    }
+    ctx.fillStyle = D.fill; ctx.fill();
+    if (D.stroke?.enabled) { ctx.strokeStyle = D.stroke.color; ctx.lineWidth = D.stroke.width; ctx.stroke(); }
+  } else if (L.type === "polygon") {
+    const P = L as any; // PolygonLayer
+    const sides = Math.max(3, Math.min(24, P.sides || 5));
+    const rx = (P.width || 100) / 2; const ry = (P.height || 100) / 2;
+    ctx.beginPath();
+    for (let i = 0; i < sides; i++) {
+      const a = (i / sides) * Math.PI * 2 - Math.PI / 2;
+      const x = Math.cos(a) * rx;
+      const y = Math.sin(a) * ry;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = P.fill; ctx.fill();
+    if (P.stroke?.enabled) { ctx.strokeStyle = P.stroke.color; ctx.lineWidth = P.stroke.width; ctx.stroke(); }
   } else if (L.type === "text" || L.type === "clock") { 
     drawText(ctx, L as TextLayer);
   }
@@ -109,6 +218,7 @@ export default function CanvasEditor({ template, registerExport }: { template: T
   const VIEW_MAX = Infinity; // no upper limit
   const ZOOM_SENSITIVITY = 0.006; // higher sensitivity
   const autoFitRef = useRef(true);
+  const INITIAL_FIT_SHRINK = 0.94; // show a bit more room on first render
   const lastGestureScaleRef = useRef(1);
   const viewScaleRef = useRef(1);
   const spacePressedRef = useRef(false);
@@ -132,6 +242,14 @@ export default function CanvasEditor({ template, registerExport }: { template: T
   const [bgRemovingLayerId, setBgRemovingLayerId] = useState<string | null>(null);
   const [showEffectsPanel, setShowEffectsPanel] = useState(false);
   const asideRef = useRef<HTMLDivElement | null>(null);
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  const [editingTextValue, setEditingTextValue] = useState<string>("");
+  const editDivRef = useRef<HTMLDivElement | null>(null);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  
+  
 
   const snapshot = useCallback(() => JSON.stringify({
     layers: layers.map(l => {
@@ -148,8 +266,8 @@ export default function CanvasEditor({ template, registerExport }: { template: T
   }, [isLoaded, history, snapshot]);
 
   // Measure text via shared util
-  const measureTextBox = useCallback((text?: string, fontSize?: number, fontWeight?: string) => (
-    measureSharedTextBox(text || '', fontSize ?? 48, fontWeight ?? '700')
+  const measureTextBox = useCallback((text?: string, fontSize?: number, fontWeight?: string, fontFamily?: string) => (
+    measureSharedTextBox(text || '', fontSize ?? 48, fontWeight ?? '700', fontFamily ?? 'sans-serif')
   ), []);
 
   // Layers helpers (operate on external state)
@@ -178,20 +296,54 @@ export default function CanvasEditor({ template, registerExport }: { template: T
 
   // deleteSelected is provided by useLayers; it deletes the currently selected layer
 
+  const clipboardRef = useRef<Partial<Layer> | null>(null);
+
+  const copySelected = useCallback(() => {
+    const L = layers.find(l => l.id === selectedId);
+    if (!L) return;
+    const { id: _omit, ...payload } = L as any;
+    clipboardRef.current = { ...payload } as Partial<Layer>;
+  }, [layers, selectedId]);
+
+  const pasteFromClipboard = useCallback(() => {
+    const c = clipboardRef.current; if (!c) return;
+    const dx = 20, dy = 20;
+    const patch = { ...c } as any;
+    if (typeof patch.x === 'number') patch.x = patch.x + dx; else patch.x = dx;
+    if (typeof patch.y === 'number') patch.y = patch.y + dy; else patch.y = dy;
+    addLayer(patch);
+  }, [addLayer]);
+
+  const duplicateSelected = useCallback(() => {
+    const L = layers.find(l => l.id === selectedId);
+    if (!L) return;
+    const { id: _omit, ...payload } = L as any;
+    addLayer({ ...(payload as Partial<Layer>), x: (L.x || 0) + 20, y: (L.y || 0) + 20 });
+  }, [layers, selectedId, addLayer]);
+
   useEffect(() => {
     const handleKeyDown = (evt: KeyboardEvent) => {
+      if (editingTextId) return; // typing inside inline editor; do not handle global shortcuts
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((document.activeElement as HTMLElement).tagName)) return;
       if ((evt.ctrlKey || evt.metaKey) && evt.key === 'z') {
         if (evt.shiftKey) redo(); else undo(); evt.preventDefault();
       } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'y') {
         redo(); evt.preventDefault();
       } else if ((evt.key === "Delete" || evt.key === "Backspace") && selectedId && !croppingLayerId && !bgRemovingLayerId) {
-      deleteSelected();
+        deleteSelected();
+      } else if ((evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === 'c') {
+        copySelected(); evt.preventDefault();
+      } else if ((evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === 'v' && !croppingLayerId && !bgRemovingLayerId) {
+        pasteFromClipboard(); evt.preventDefault();
+      } else if ((evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === 'd' && !croppingLayerId && !bgRemovingLayerId) {
+        duplicateSelected(); evt.preventDefault();
+      } else if ((evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === 'x' && selectedId && !croppingLayerId && !bgRemovingLayerId) {
+        copySelected(); deleteSelected(); evt.preventDefault();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo, selectedId, croppingLayerId, bgRemovingLayerId, deleteSelected]);
+  }, [undo, redo, selectedId, croppingLayerId, bgRemovingLayerId, deleteSelected, copySelected, pasteFromClipboard, duplicateSelected, editingTextId]);
 
   useEffect(() => {
     try {
@@ -241,7 +393,7 @@ export default function CanvasEditor({ template, registerExport }: { template: T
   // getHandleCoords is imported from shared/canvas
 
   const onPointerDown = useCallback((evt: React.PointerEvent<HTMLCanvasElement>) => {
-    if (croppingLayerId || bgRemovingLayerId) return;
+    if (croppingLayerId || bgRemovingLayerId || editingTextId) return;
     const p = getPointer(evt);
     if (selectedId) {
       const L = layers.find(l => l.id === selectedId);
@@ -307,6 +459,10 @@ export default function CanvasEditor({ template, registerExport }: { template: T
     setAction(null); setActiveHandle(null); 
   }, [action, recordHistory]);
 
+  
+
+  
+
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
@@ -315,7 +471,10 @@ export default function CanvasEditor({ template, registerExport }: { template: T
         const r = getCornerRadiusPx(w, h, template);
         ctx.save(); drawRoundedRectPath(ctx, 0, 0, w, h, r); ctx.clip(); ctx.fillStyle = bgColor; ctx.fillRect(0, 0, w, h); ctx.restore();
         
-        layers.forEach(L => { ctx.save(); drawRoundedRectPath(ctx, 0, 0, w, h, r); ctx.clip(); drawLayer(ctx, L); ctx.restore(); });
+        layers.forEach(L => { 
+          if (editingTextId && L.id === editingTextId && (L.type === 'text' || L.type === 'clock')) return; 
+          ctx.save(); drawRoundedRectPath(ctx, 0, 0, w, h, r); ctx.clip(); drawLayer(ctx, L); ctx.restore(); 
+        });
         if (previewLayout) drawLayoutPreview(ctx, w, h, previewLayout);
     
     ctx.save(); const bT = 16; const bP = new Path2D(); bP.addPath(buildRoundedRectPath(-bT,-bT,w+bT*2,h+bT*2,r+bT)); bP.addPath(buildRoundedRectPath(0,0,w,h,r)); ctx.fillStyle="#111827"; ctx.fill(bP,"evenodd"); ctx.strokeStyle="rgba(255,255,255,0.15)"; ctx.lineWidth=2; ctx.stroke(buildRoundedRectPath(0,0,w,h,r)); ctx.restore();
@@ -341,7 +500,7 @@ export default function CanvasEditor({ template, registerExport }: { template: T
       }
     }
     ctx.restore();
-  }, [layers, selectedId, w, h, bgColor, template, croppingLayerId, bgRemovingLayerId, previewLayout]);
+  }, [layers, selectedId, w, h, bgColor, template, croppingLayerId, bgRemovingLayerId, previewLayout, editingTextId]);
 
   useEffect(() => {
     const ro = new ResizeObserver(() => {
@@ -351,10 +510,11 @@ export default function CanvasEditor({ template, registerExport }: { template: T
       // Fit to the face area so it uses full space; margin remains offscreen editing buffer
       const fit = Math.max(0.05, Math.min(clientWidth / w, clientHeight / h));
       if (autoFitRef.current) {
-        setViewScale(fit);
-        // Center the stage for initial fit
-        setPanX((clientWidth - fit * (w + CANVAS_MARGIN*2)) / 2);
-        setPanY((clientHeight - fit * (h + CANVAS_MARGIN*2)) / 2);
+        const s = fit * INITIAL_FIT_SHRINK;
+        setViewScale(s);
+        // Center the stage for initial fit (use scaled stage size)
+        setPanX((clientWidth - s * (w + CANVAS_MARGIN*2)) / 2);
+        setPanY((clientHeight - s * (h + CANVAS_MARGIN*2)) / 2);
       }
     });
     const el = fitRef.current as HTMLElement | null;
@@ -376,6 +536,7 @@ export default function CanvasEditor({ template, registerExport }: { template: T
   // Prevent browser zoom globally on pinch/ctrl+wheel; apply our zoom only when over the preview area
   useEffect(() => {
     const onWheel = (e: WheelEvent) => {
+      if (editingTextId) { e.preventDefault(); return; }
       const container = fitRef.current as HTMLElement | null;
       const target = e.target as Node | null;
       const inside = !!(container && target && container.contains(target));
@@ -411,6 +572,7 @@ export default function CanvasEditor({ template, registerExport }: { template: T
     };
     const onGestureChange = (e: any) => {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      if (editingTextId) return;
       const container = fitRef.current as HTMLElement | null;
       const target = e.target as Node | null;
       const inside = !!(container && target && container.contains(target));
@@ -462,9 +624,6 @@ export default function CanvasEditor({ template, registerExport }: { template: T
   const [showFilters, setShowFilters] = useState(false);
   const [draggingLayerId, setDraggingLayerId] = useState<string | null>(null);
   const [dragOverLayerId, setDragOverLayerId] = useState<string | null>(null);
-  const [panX, setPanX] = useState(0);
-  const [panY, setPanY] = useState(0);
-  const stageRef = useRef<HTMLDivElement | null>(null);
 
   const handleLayerDrop = useCallback((targetId: string) => {
     reorder(draggingLayerId, targetId);
@@ -482,17 +641,7 @@ export default function CanvasEditor({ template, registerExport }: { template: T
     setShowEffectsPanel(false);
   }, [activeTab]);
 
-  // Close effects pane when clicking outside the left panel
-  useEffect(() => {
-    if (!showEffectsPanel) return;
-    const onDown = (e: MouseEvent) => {
-      const t = e.target as Node | null;
-      if (asideRef.current && t && asideRef.current.contains(t)) return;
-      setShowEffectsPanel(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [showEffectsPanel]);
+  // Do not auto-close on external clicks; only close on deselect or tab change
 
   return (
     <div className="flex-1 flex overflow-hidden">
@@ -557,9 +706,10 @@ export default function CanvasEditor({ template, registerExport }: { template: T
         </div>
 
         <div
-          className="flex-1 relative overflow-hidden flex items-center justify-center p-0"
+          className="flex-1 relative overflow-hidden p-0"
           ref={fitRef}
           onPointerDown={(e)=>{
+            if (editingTextId) return;
             if (e.button === 1 || spacePressedRef.current) {
               e.preventDefault(); e.stopPropagation();
               const el = e.currentTarget as HTMLElement; try { el.setPointerCapture(e.pointerId); } catch {}
@@ -590,9 +740,37 @@ export default function CanvasEditor({ template, registerExport }: { template: T
           style={{ cursor: panDragRef.current.active || spacePressedRef.current ? 'grabbing' : undefined }}
         >
            <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#4b5563 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-           <div className="relative" ref={stageRef} style={{ transform: `translate(${panX}px, ${panY}px) scale(${viewScale})`, transformOrigin: '0 0' }}>
-             <canvas ref={canvasRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerLeave={onPointerUp} className="relative touch-none cursor-grab active:cursor-grabbing" style={{ width: (w + CANVAS_MARGIN*2), height: (h + CANVAS_MARGIN*2), background: 'transparent' }} />
-           </div>
+           <div className="absolute left-0 top-0" ref={stageRef} style={{ transform: `translate(${panX}px, ${panY}px)` }}>
+             <div className="relative" style={{ transform: `scale(${viewScale})`, transformOrigin: '0 0' }}>
+               <canvas ref={canvasRef} onDoubleClick={(e)=>{ e.preventDefault(); e.stopPropagation(); const p = getPointer(e as any); let picked: Layer | null = null; for (let i = layers.length - 1; i >= 0; i--) { const L = layers[i]; if (L.hidden || L.locked) continue; if (!(L.type === 'text' || L.type === 'clock')) continue; const loc = pointToLocal(L, p.x, p.y); const cw = L.width!; const ch = L.height!; if (Math.abs(loc.x) <= cw/2 && Math.abs(loc.y) <= ch/2) { picked = L; break; } } if (picked) { setSelectedId(picked.id); const L = picked as TextLayer; setEditingTextId(L.id); setEditingTextValue(L.text || ''); setTimeout(()=> { const el = editDivRef.current; if (el) { el.textContent = (L.text && L.text.length>0) ? L.text : '\u200B'; el.focus(); const sel = window.getSelection && window.getSelection(); if (sel) { const range = document.createRange(); range.selectNodeContents(el); sel.removeAllRanges(); sel.addRange(range); } } }, 0); } }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerLeave={onPointerUp} className="relative touch-none cursor-text" style={{ width: (w + CANVAS_MARGIN*2), height: (h + CANVAS_MARGIN*2), background: 'transparent' }} />
+              {editingTextId && (()=>{ 
+                const L = layers.find(l=>l.id===editingTextId) as TextLayer | undefined; 
+                if (!L) return null; 
+                const textVal = editingTextValue;
+                const mcur = measureSharedTextBox((textVal && textVal.length>0) ? textVal : ' ', L.fontSize ?? 48, L.fontWeight ?? '700', L.fontFamily ?? 'sans-serif');
+                const w0 = Math.max(10, mcur.width);
+                const h0 = Math.max(10, mcur.height);
+                const left = CANVAS_MARGIN + L.x; 
+                const top = CANVAS_MARGIN + L.y; 
+                const innerT = `rotate(${L.rotation}deg) scale(${L.scaleX}, ${L.scaleY}) translate(${-w0/2}px, ${-h0/2}px)`; 
+                return (
+                  <div className="absolute z-50 pointer-events-auto" style={{ left, top }}>
+                    <div style={{ transform: innerT, transformOrigin: '0 0' }}>
+                      <div
+                        ref={editDivRef}
+                        contentEditable
+                        suppressContentEditableWarning
+                        onInput={(e)=> { const el = e.target as HTMLDivElement; let t = el.textContent || ''; t = t.replace('\u200B',''); setEditingTextValue(t); if (t.length===0) { setTimeout(()=>{ if ((el.textContent||'').length===0) el.textContent='\u200B'; }, 0); } }}
+                        onBlur={()=>{ if (editingTextId!=null) { updateLayer(editingTextId, { text: editingTextValue }, true); setEditingTextId(null); } }}
+                        onKeyDown={(e)=>{ if (e.key==='Enter') { e.preventDefault(); if (editingTextId!=null) { updateLayer(editingTextId, { text: editingTextValue }, true); setEditingTextId(null); } } else if (e.key==='Escape') { e.preventDefault(); setEditingTextId(null); } }}
+                        dir="ltr"
+                        style={{ width: w0, height: h0+2, whiteSpace: 'pre', direction: 'ltr', unicodeBidi: 'plaintext', fontSize: `${L.fontSize || 48}px`, lineHeight: `${L.fontSize || 48}px`, fontFamily: L.fontFamily || 'sans-serif', fontWeight: L.fontWeight || '700', color: L.color || '#ffffff', background: 'transparent', outline: 'none', overflow: 'visible' }}
+                      />
+                    </div>
+                  </div>
+                ); })()}
+            </div>
+          </div>
             <div className="absolute bottom-6 right-6 bg-white rounded-full shadow-lg border border-gray-100 p-1 flex items-center gap-2">
               <button onClick={() => { autoFitRef.current = false; setViewScale(s => Math.max(VIEW_MIN, s - 0.1)); }} className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 rounded-full text-gray-600" title="縮小">-</button>
               <span className="text-xs font-medium w-14 text-center text-gray-500">{Math.round(viewScale * 100)}%</span>
