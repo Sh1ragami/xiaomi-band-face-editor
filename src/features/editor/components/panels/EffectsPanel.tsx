@@ -31,7 +31,7 @@ export default function EffectsPanel({ selectedLayer, updateSelected, onClose }:
     updateSelected({ curve: { ...(((selectedLayer as TextLayer).curve) || { enabled: false, radius: 200, spacing: 0 }), ...patch } } as any, true);
   };
 
-  const title = selectedLayer.type === 'rect' || selectedLayer.type === 'circle' ? '編集' : 'エフェクト';
+  const title = (selectedLayer.type === 'image' || selectedLayer.type === 'text' || selectedLayer.type === 'clock') ? 'エフェクト' : '編集';
 
   return (
     <div className="animate-in fade-in duration-300 space-y-6">
@@ -66,7 +66,7 @@ export default function EffectsPanel({ selectedLayer, updateSelected, onClose }:
       )}
 
       {/* Stroke (text/rect/circle) */}
-      {(selectedLayer.type === 'text' || selectedLayer.type === 'clock' || selectedLayer.type === 'rect' || selectedLayer.type === 'circle') && (
+      {(selectedLayer.type === 'text' || selectedLayer.type === 'clock' || selectedLayer.type === 'rect' || selectedLayer.type === 'circle' || selectedLayer.type === 'triangle' || selectedLayer.type === 'line' || selectedLayer.type === 'arrow' || selectedLayer.type === 'star' || selectedLayer.type === 'diamond') && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-900">縁取り</h3>
@@ -118,6 +118,84 @@ export default function EffectsPanel({ selectedLayer, updateSelected, onClose }:
           </div>
         )}
       </section>
+
+      {/* Corner radius (rect only) */}
+      {selectedLayer.type === 'rect' && (
+        <section className="space-y-3">
+          <h3 className="text-sm font-bold text-gray-900">角丸</h3>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">半径: {(selectedLayer as any).cornerRadius || 0}px</label>
+            <input type="range" min="0" max={Math.floor(Math.min((selectedLayer as any).width || 0, (selectedLayer as any).height || 0) / 2)} value={(selectedLayer as any).cornerRadius || 0} onChange={(e) => updateSelected({ cornerRadius: parseInt((e.target as HTMLInputElement).value) } as any, true)} className="w-full accent-violet-600" />
+          </div>
+        </section>
+      )}
+
+      {/* Diamond corner smoothness */}
+      {selectedLayer.type === 'diamond' && (
+        <section className="space-y-3">
+          <h3 className="text-sm font-bold text-gray-900">角の滑らかさ</h3>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">半径: {(selectedLayer as any).cornerRadius || 0}px</label>
+            <input type="range" min="0" max={Math.floor(Math.min((selectedLayer as any).width || 0, (selectedLayer as any).height || 0) / 4)} value={(selectedLayer as any).cornerRadius || 0} onChange={(e)=>updateSelected({ cornerRadius: parseInt((e.target as HTMLInputElement).value) } as any, true)} className="w-full accent-violet-600" />
+          </div>
+        </section>
+      )}
+
+      {/* Arrow options */}
+      {selectedLayer.type === 'arrow' && (
+        <section className="space-y-3">
+          <h3 className="text-sm font-bold text-gray-900">矢印の形状</h3>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">ヘッド長（比率）: {((selectedLayer as any).headRatio ?? 0.32).toFixed(2)}</label>
+            <input type="range" min="0.1" max="0.6" step="0.01" value={(selectedLayer as any).headRatio ?? 0.32} onChange={(e)=>updateSelected({ headRatio: parseFloat((e.target as HTMLInputElement).value) } as any, true)} className="w-full accent-violet-600" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">シャフト太さ（比率）: {((selectedLayer as any).shaftRatio ?? 0.35).toFixed(2)}</label>
+            <input type="range" min="0.05" max="0.9" step="0.01" value={(selectedLayer as any).shaftRatio ?? 0.35} onChange={(e)=>updateSelected({ shaftRatio: parseFloat((e.target as HTMLInputElement).value) } as any, true)} className="w-full accent-violet-600" />
+          </div>
+        </section>
+      )}
+
+      {/* Star options */}
+      {selectedLayer.type === 'star' && (
+        <section className="space-y-3">
+          <h3 className="text-sm font-bold text-gray-900">星の形状</h3>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">角の数: {(selectedLayer as any).points ?? 5}</label>
+            <input type="range" min="3" max="12" step="1" value={(selectedLayer as any).points ?? 5} onChange={(e)=>updateSelected({ points: parseInt((e.target as HTMLInputElement).value) } as any, true)} className="w-full accent-violet-600" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">内側比率: {((selectedLayer as any).innerRatio ?? 0.5).toFixed(2)}</label>
+            <input type="range" min="0.2" max="0.8" step="0.01" value={(selectedLayer as any).innerRatio ?? 0.5} onChange={(e)=>updateSelected({ innerRatio: parseFloat((e.target as HTMLInputElement).value) } as any, true)} className="w-full accent-violet-600" />
+          </div>
+        </section>
+      )}
+
+      {/* Polygon options */}
+      {selectedLayer.type === 'polygon' && (
+        <section className="space-y-3">
+          <h3 className="text-sm font-bold text-gray-900">多角形</h3>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">角の数: {(selectedLayer as any).sides ?? 5}</label>
+            <input type="range" min="3" max="24" step="1" value={(selectedLayer as any).sides ?? 5} onChange={(e)=>updateSelected({ sides: parseInt((e.target as HTMLInputElement).value) } as any, true)} className="w-full accent-violet-600" />
+          </div>
+        </section>
+      )}
+
+      {/* Line options */}
+      {selectedLayer.type === 'line' && (
+        <section className="space-y-3">
+          <h3 className="text-sm font-bold text-gray-900">線の編集</h3>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">太さ: {(selectedLayer as any).height || 4}px</label>
+            <input type="range" min="1" max="100" step="1" value={(selectedLayer as any).height || 4} onChange={(e)=>updateSelected({ height: parseInt((e.target as HTMLInputElement).value) } as any, true)} className="w-full accent-violet-600" />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-500 font-medium">端を丸く</span>
+            <input type="checkbox" checked={(selectedLayer as any).rounded || false} onChange={(e)=>updateSelected({ rounded: e.target.checked } as any, true)} className="w-5 h-5 accent-violet-600 cursor-pointer" />
+          </div>
+        </section>
+      )}
 
       {/* Curve (text only) */}
       {(selectedLayer.type === 'text' || selectedLayer.type === 'clock') && (

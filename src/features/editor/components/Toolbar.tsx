@@ -61,7 +61,7 @@ export default function Toolbar({ selectedLayer, updateSelected, setCroppingLaye
         </>
       )}
 
-      {(selectedLayer.type === 'rect' || selectedLayer.type === 'circle') && (
+      {(selectedLayer.type === 'rect' || selectedLayer.type === 'circle' || selectedLayer.type === 'triangle' || selectedLayer.type === 'line' || selectedLayer.type === 'arrow' || selectedLayer.type === 'star' || selectedLayer.type === 'diamond' || selectedLayer.type === 'polygon') && (
         <>
           <input type="color" value={(selectedLayer as any).fill || '#ffffff'} onChange={(e)=>updateSelected({fill: (e.target as HTMLInputElement).value}, true)} className="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5" />
           <button onClick={openEffectsPanel} className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"><MagicWandIcon className="w-4 h-4" /><span>編集</span></button>

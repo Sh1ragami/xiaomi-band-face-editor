@@ -82,10 +82,16 @@ const drawLayer = (ctx: CanvasRenderingContext2D, L: Layer) => {
   } else if (L.type === "rect") { 
     const R = L as RectLayer; 
     ctx.fillStyle = R.fill; 
-    ctx.fillRect(-R.width/2, -R.height/2, R.width, R.height);
-    if (R.stroke?.enabled) {
-      ctx.strokeStyle = R.stroke.color; ctx.lineWidth = R.stroke.width;
-      ctx.strokeRect(-R.width/2, -R.height/2, R.width, R.height);
+    if (R.cornerRadius && R.cornerRadius > 0) {
+      drawRoundedRectPath(ctx, -R.width/2, -R.height/2, R.width, R.height, R.cornerRadius);
+      ctx.fill();
+      if (R.stroke?.enabled) { ctx.strokeStyle = R.stroke.color; ctx.lineWidth = R.stroke.width; ctx.stroke(); }
+    } else {
+      ctx.fillRect(-R.width/2, -R.height/2, R.width, R.height);
+      if (R.stroke?.enabled) {
+        ctx.strokeStyle = R.stroke.color; ctx.lineWidth = R.stroke.width;
+        ctx.strokeRect(-R.width/2, -R.height/2, R.width, R.height);
+      }
     }
   } else if (L.type === "circle") { 
     const C = L as CircleLayer; 
@@ -93,6 +99,109 @@ const drawLayer = (ctx: CanvasRenderingContext2D, L: Layer) => {
     if (C.stroke?.enabled) {
       ctx.strokeStyle = C.stroke.color; ctx.lineWidth = C.stroke.width; ctx.stroke();
     }
+  } else if (L.type === "triangle") {
+    const T = L as any; // TriangleLayer
+    const w2 = (T.width || 0) / 2; const h2 = (T.height || 0) / 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -h2);
+    ctx.lineTo(w2, h2);
+    ctx.lineTo(-w2, h2);
+    ctx.closePath();
+    ctx.fillStyle = T.fill; ctx.fill();
+    if (T.stroke?.enabled) { ctx.strokeStyle = T.stroke.color; ctx.lineWidth = T.stroke.width; ctx.stroke(); }
+  } else if (L.type === "line") {
+    const LN = L as any; // LineLayer
+    const length = LN.width || 100; const thick = Math.max(1, LN.height || 4);
+    ctx.fillStyle = LN.fill;
+    if (LN.rounded) {
+      drawRoundedRectPath(ctx, -length/2, -thick/2, length, thick, thick/2);
+      ctx.fill();
+      if (LN.stroke?.enabled) { ctx.strokeStyle = LN.stroke.color; ctx.lineWidth = LN.stroke.width; ctx.stroke(); }
+    } else {
+      ctx.fillRect(-length/2, -thick/2, length, thick);
+      if (LN.stroke?.enabled) { ctx.strokeStyle = LN.stroke.color; ctx.lineWidth = LN.stroke.width; ctx.strokeRect(-length/2, -thick/2, length, thick); }
+    }
+  } else if (L.type === "arrow") {
+    const A = L as any; // ArrowLayer
+    const w = A.width || 120; const h = A.height || 60;
+    const headRatio = Math.min(0.8, Math.max(0.1, A.headRatio ?? 0.32));
+    const shaftRatio = Math.min(1, Math.max(0.05, A.shaftRatio ?? 0.35));
+    const headLen = w * headRatio;
+    const shaftLen = w - headLen;
+    const shaftThick = h * shaftRatio;
+    // Shaft
+    ctx.fillStyle = A.fill;
+    ctx.fillRect(-w/2, -shaftThick/2, shaftLen, shaftThick);
+    // Head
+    ctx.beginPath();
+    ctx.moveTo(w/2, 0);
+    ctx.lineTo(w/2 - headLen, -h/2);
+    ctx.lineTo(w/2 - headLen, h/2);
+    ctx.closePath();
+    ctx.fill();
+    if (A.stroke?.enabled) { ctx.strokeStyle = A.stroke.color; ctx.lineWidth = A.stroke.width; ctx.stroke(); }
+  } else if (L.type === "star") {
+    const S = L as any; // StarLayer
+    const points = Math.max(3, Math.min(12, S.points ?? 5));
+    const inner = Math.max(0.1, Math.min(0.9, S.innerRatio ?? 0.5));
+    const rx = (S.width || 100) / 2;
+    const ry = (S.height || 100) / 2;
+    ctx.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+      const r = (i % 2 === 0) ? 1 : inner;
+      const a = (Math.PI * i) / points - Math.PI / 2;
+      const x = Math.cos(a) * rx * r;
+      const y = Math.sin(a) * ry * r;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = S.fill; ctx.fill();
+    if (S.stroke?.enabled) { ctx.strokeStyle = S.stroke.color; ctx.lineWidth = S.stroke.width; ctx.stroke(); }
+  } else if (L.type === "diamond") {
+    const D = L as any; const w2 = (D.width || 100) / 2; const h2 = (D.height || 100) / 2;
+    const rIn = Math.max(0, D.cornerRadius || 0);
+    const maxR = Math.min(w2, h2) * 0.8;
+    const r = Math.min(rIn, maxR);
+    const pts = [ {x:0,y:-h2}, {x:w2,y:0}, {x:0,y:h2}, {x:-w2,y:0} ];
+    ctx.beginPath();
+    if (r <= 0) {
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.closePath();
+    } else {
+      for (let i=0;i<pts.length;i++) {
+        const p0 = pts[(i+pts.length-1)%pts.length];
+        const p1 = pts[i];
+        const p2 = pts[(i+1)%pts.length];
+        const v01x = p1.x - p0.x; const v01y = p1.y - p0.y;
+        const v12x = p2.x - p1.x; const v12y = p2.y - p1.y;
+        const len01 = Math.hypot(v01x, v01y); const len12 = Math.hypot(v12x, v12y);
+        const rr = Math.min(r, len01/2, len12/2);
+        const ux = v01x/len01, uy = v01y/len01;
+        const vx = v12x/len12, vy = v12y/len12;
+        const pA = { x: p1.x - ux*rr, y: p1.y - uy*rr };
+        const pB = { x: p1.x + vx*rr, y: p1.y + vy*rr };
+        if (i===0) ctx.moveTo(pA.x, pA.y); else ctx.lineTo(pA.x, pA.y);
+        ctx.arcTo(p1.x, p1.y, pB.x, pB.y, rr);
+      }
+      ctx.closePath();
+    }
+    ctx.fillStyle = D.fill; ctx.fill();
+    if (D.stroke?.enabled) { ctx.strokeStyle = D.stroke.color; ctx.lineWidth = D.stroke.width; ctx.stroke(); }
+  } else if (L.type === "polygon") {
+    const P = L as any; // PolygonLayer
+    const sides = Math.max(3, Math.min(24, P.sides || 5));
+    const rx = (P.width || 100) / 2; const ry = (P.height || 100) / 2;
+    ctx.beginPath();
+    for (let i = 0; i < sides; i++) {
+      const a = (i / sides) * Math.PI * 2 - Math.PI / 2;
+      const x = Math.cos(a) * rx;
+      const y = Math.sin(a) * ry;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = P.fill; ctx.fill();
+    if (P.stroke?.enabled) { ctx.strokeStyle = P.stroke.color; ctx.lineWidth = P.stroke.width; ctx.stroke(); }
   } else if (L.type === "text" || L.type === "clock") { 
     drawText(ctx, L as TextLayer);
   }
@@ -517,17 +626,7 @@ export default function CanvasEditor({ template, registerExport }: { template: T
     setShowEffectsPanel(false);
   }, [activeTab]);
 
-  // Close effects pane when clicking outside the left panel
-  useEffect(() => {
-    if (!showEffectsPanel) return;
-    const onDown = (e: MouseEvent) => {
-      const t = e.target as Node | null;
-      if (asideRef.current && t && asideRef.current.contains(t)) return;
-      setShowEffectsPanel(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [showEffectsPanel]);
+  // Do not auto-close on external clicks; only close on deselect or tab change
 
   return (
     <div className="flex-1 flex overflow-hidden">
