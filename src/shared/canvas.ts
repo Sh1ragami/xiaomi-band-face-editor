@@ -159,18 +159,74 @@ export function drawLayoutPreview(ctx: CanvasRenderingContext2D, w: number, h: n
     ctx.restore();
 
   } else if (styleId === 'style2') {
-    ctx.textAlign = "right";
-    const colX = w - padX;
-    const maxW = w * 0.5;
-    const dSize = fitted("09", "700", h * 0.16, maxW);
-    setFont("700", dSize);
-    ctx.fillText("09", colX, h * 0.30);
-    ctx.fillText("28", colX, h * 0.50);
-    const s2 = Math.max(12, Math.round(dSize * 0.22));
-    setFont("500", s2);
-    ctx.fillText("SAT 16", colX, h * 0.60);
-    ctx.fillText("AM", colX, h * 0.66);
+    // 1. Status Bar (Same as style1)
+    const statusSize = Math.round(w * 0.08); 
+    const statusY = h * 0.155; 
+    setFont("400", statusSize);
+    
+    // Bluetooth Icon
+    ctx.save();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "rgba(255,255,255,0.8)";
+    const btX = w/2 - statusSize * 1.0;
+    const btY = statusY;
+    const btH = statusSize * 0.65;
+    ctx.beginPath();
+    ctx.moveTo(btX - btH/2, btY - btH/2);
+    ctx.lineTo(btX + btH/2, btY + btH/2);
+    ctx.lineTo(btX, btY + btH);
+    ctx.lineTo(btX, btY - btH);
+    ctx.lineTo(btX + btH/2, btY - btH/2);
+    ctx.lineTo(btX - btH/2, btY + btH/2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Battery Icon & Text
+    ctx.textAlign = "left";
+    const battX = w/2 + statusSize * 0.7;
+    const battW = statusSize * 1.2;
+    const battH = statusSize * 0.6;
+    ctx.strokeStyle = "rgba(255,255,255,0.8)";
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(battX, statusY - battH/2, battW, battH);
+    ctx.fillRect(battX + battW, statusY - battH/4, 2, battH/2);
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    ctx.fillRect(battX + 1.5, statusY - battH/2 + 1.5, battW * 0.7, battH - 3);
+    ctx.fillText("80%", battX + battW + 5, statusY + 1);
     ctx.textAlign = "center";
+    ctx.fillStyle = "#ffffff";
+
+    // 2. Vertical Time & Vertical Date
+    const timeY = h * 0.35; 
+    const timeSize = h * 0.14;
+    const dateSize = timeSize * 0.30; // Reduced approx 1px more
+    
+    const hStr = "09";
+    const mStr = "28";
+    
+    ctx.save();
+    // Shift right (+20) and vertical position
+    ctx.translate(w/2 + 20, timeY);
+    ctx.scale(0.9, 1.3);
+    
+    // Time (Left part)
+    setFont("700", timeSize);
+    ctx.textAlign = "right";
+    const timeGap = timeSize * 0.85; 
+    ctx.fillText(hStr, 0, -timeGap/2);
+    ctx.fillText(mStr, 0, timeGap/2);
+    
+    // Date (Right part) - Right aligned and fine-tuned position
+    setFont("600", dateSize);
+    ctx.textAlign = "right"; 
+    const dateX = 57; // Shifted slightly right (from 55)
+    const dateLineH = dateSize * 1.3; 
+    const dateUpOffset = -timeSize * 0.31; // Lowered slightly (from -0.35)
+    ctx.fillText("SAT", dateX, -dateLineH + dateUpOffset);
+    ctx.fillText("16", dateX, 0 + dateUpOffset);
+    ctx.fillText("AM", dateX, dateLineH + dateUpOffset);
+    
+    ctx.restore();
   } else if (styleId === 'style3') {
     const maxW = w - padX * 2;
     const dSize = fitted("09", "300", h * 0.22, maxW);
