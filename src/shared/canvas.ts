@@ -106,18 +106,18 @@ export function drawLayoutPreview(ctx: CanvasRenderingContext2D, w: number, h: n
     ctx.stroke();
     ctx.restore();
 
-    // Battery Icon & Text (Moved right)
-    ctx.textAlign = "left";
-    const battX = w/2 + statusSize * 0.7; // Moved right (from 0.4)
-    const battW = statusSize * 1.2;
-    const battH = statusSize * 0.6;
+    // Battery Icon & Text (Vertical)
+    const battX = w/2 + statusSize * 0.7; 
+    const battW = statusSize * 0.6;
+    const battH = statusSize * 0.9;
     ctx.strokeStyle = "rgba(255,255,255,0.8)";
     ctx.lineWidth = 1.2;
     ctx.strokeRect(battX, statusY - battH/2, battW, battH);
-    ctx.fillRect(battX + battW, statusY - battH/4, 2, battH/2);
+    ctx.fillRect(battX + 2, statusY - battH/2 - 2, battW - 4, 2); 
     ctx.fillStyle = "rgba(255,255,255,0.8)";
-    ctx.fillRect(battX + 1.5, statusY - battH/2 + 1.5, battW * 0.7, battH - 3);
-    ctx.fillText("80%", battX + battW + 5, statusY + 1);
+    ctx.fillRect(battX + 1.5, statusY + battH/2 - (battH * 0.7), battW - 3, battH * 0.7 - 1.5); 
+    ctx.textAlign = "left";
+    ctx.fillText("80%", battX + battW + 6, statusY + 2);
     ctx.textAlign = "center";
     ctx.fillStyle = "#ffffff";
 
@@ -181,18 +181,18 @@ export function drawLayoutPreview(ctx: CanvasRenderingContext2D, w: number, h: n
     ctx.stroke();
     ctx.restore();
 
-    // Battery Icon & Text
-    ctx.textAlign = "left";
+    // Battery Icon & Text (Vertical)
     const battX = w/2 + statusSize * 0.7;
-    const battW = statusSize * 1.2;
-    const battH = statusSize * 0.6;
+    const battW = statusSize * 0.6;
+    const battH = statusSize * 0.9;
     ctx.strokeStyle = "rgba(255,255,255,0.8)";
     ctx.lineWidth = 1.2;
     ctx.strokeRect(battX, statusY - battH/2, battW, battH);
-    ctx.fillRect(battX + battW, statusY - battH/4, 2, battH/2);
+    ctx.fillRect(battX + 2, statusY - battH/2 - 2, battW - 4, 2); 
     ctx.fillStyle = "rgba(255,255,255,0.8)";
-    ctx.fillRect(battX + 1.5, statusY - battH/2 + 1.5, battW * 0.7, battH - 3);
-    ctx.fillText("80%", battX + battW + 5, statusY + 1);
+    ctx.fillRect(battX + 1.5, statusY + battH/2 - (battH * 0.7), battW - 3, battH * 0.7 - 1.5); 
+    ctx.textAlign = "left";
+    ctx.fillText("80%", battX + battW + 6, statusY + 2);
     ctx.textAlign = "center";
     ctx.fillStyle = "#ffffff";
 
