@@ -228,14 +228,82 @@ export function drawLayoutPreview(ctx: CanvasRenderingContext2D, w: number, h: n
     
     ctx.restore();
   } else if (styleId === 'style3') {
-    const maxW = w - padX * 2;
-    const dSize = fitted("09", "300", h * 0.22, maxW);
-    setFont("300", dSize);
-    ctx.fillText("09", w/2, h * 0.28);
-    ctx.fillText("28", w/2, h * 0.53);
-    const s3 = Math.max(12, Math.round(dSize * 0.2));
-    setFont("500", s3);
-    ctx.fillText("AM  SAT  16", w/2, h * 0.72);
+    // 1. Status Bar (Top Right Edge - Further Up and Right)
+    const statusSize = Math.round(w * 0.07);
+    
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.lineWidth = 1.5;
+    
+    // Battery (Even further Up and Left)
+    const battW = statusSize * 0.6;
+    const battH = statusSize * 0.9;
+    const battX = w/2 + 15; 
+    const battY = h * 0.025; // Further up
+    
+    ctx.strokeRect(battX, battY, battW, battH);
+    ctx.fillRect(battX + 2, battY - 2, battW - 4, 2); 
+    ctx.fillRect(battX + 2, battY + battH - (battH * 0.7), battW - 4, battH * 0.7 - 2); 
+
+    // Bluetooth Icon (Further right, Lower than Battery)
+    const btX = battX + battW + 14; 
+    const btY = battY + 11; // Kept lower but moved up with battery
+    const btH = statusSize * 0.7;
+    
+    ctx.save();
+    ctx.translate(btX, btY);
+    ctx.beginPath();
+    ctx.moveTo(0, -btH/2);
+    ctx.lineTo(btH/3, 0);
+    ctx.lineTo(0, btH/2);
+    ctx.lineTo(0, -btH/2);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-btH/3, -btH/3);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-btH/3, btH/3);
+    ctx.stroke();
+    ctx.restore();
+    
+    ctx.restore();
+
+    // 2. Vertical Time (Solid Thin, Smaller, Centered) - Horizontal Gaps added
+    const timeY = h * 0.33; 
+    const timeSize = h * 0.18; 
+    
+    ctx.save();
+    ctx.translate(w/2, timeY);
+    ctx.scale(0.8, 1.1); 
+    
+    // Solid Thin Text
+    ctx.font = `300 ${timeSize}px sans-serif`; 
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    
+    // Draw each digit separately to increase horizontal spacing
+    const hGap = timeSize * 0.45; // Increased gap further (from 0.35)
+    // 09
+    ctx.fillText("0", -hGap, -timeSize * 0.48);
+    ctx.fillText("9", hGap, -timeSize * 0.48);
+    // 28
+    ctx.fillText("2", -hGap, timeSize * 0.56);
+    ctx.fillText("8", hGap, timeSize * 0.56);
+    
+    ctx.restore();
+
+    // 3. Date (Bottom Center) - Lowered slightly
+    const dateY = h * 0.88; // Lowered from 0.85
+    const dateSize = h * 0.045; 
+    
+    ctx.save();
+    ctx.translate(w/2, dateY);
+    ctx.scale(0.9, 1.3);
+    setFont("600", dateSize);
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.fillText("AM  SAT  16", 0, 0);
+    ctx.restore();
+
   } else if (styleId === 'style4') {
     const maxW = w - padX * 2;
     const tSize = fitted("0928", "700", h * 0.13, maxW);
