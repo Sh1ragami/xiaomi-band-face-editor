@@ -412,15 +412,59 @@ export function drawLayoutPreview(ctx: CanvasRenderingContext2D, w: number, h: n
     ctx.restore();
 
   } else if (styleId === 'style5') {
+    // Bottom Cluster - Moved down
+    const centerY = h * 0.78; // Lowered from 0.75
+    
+    // 1. Date (AM SAT 16) - Moved up to create gap
+    setFont("500", h * 0.045);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("AM  SAT  16", w/2, centerY - h * 0.07); // Offset increased from -0.04 to -0.07
+
+    // 2. Time (0928) - Lowered slightly with centerY
+    setFont("500", h * 0.12); 
+    ctx.fillText("0928", w/2, centerY + h * 0.03);
+
+    // 3. Status Bar (Bluetooth & Battery) - Larger Icons
+    const statusY = centerY + h * 0.11;
+    const statusSize = w * 0.08; // Increased from 0.065
+    
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.8)";
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    ctx.lineWidth = 1.6; // Bolder
+    
+    // Bluetooth
+    const btX = w/2 - 15; // Shifted slightly left to balance larger battery
+    const btH = statusSize * 0.8;
+    ctx.save();
+    ctx.translate(btX, statusY);
+    ctx.beginPath();
+    ctx.moveTo(0, -btH/2);
+    ctx.lineTo(btH/3, 0);
+    ctx.lineTo(0, btH/2);
+    ctx.lineTo(0, -btH/2);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-btH/3, -btH/3);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-btH/3, btH/3);
+    ctx.stroke();
+    ctx.restore();
+
+    // Battery (Vertical Icon)
+    const battX = w/2 + 22; // Adjusted for larger size
+    const battW = statusSize * 0.6;
+    const battH = statusSize * 0.9;
+    
+    ctx.strokeRect(battX, statusY - battH/2, battW, battH);
+    ctx.fillRect(battX + 2, statusY - battH/2 - 2, battW - 4, 2); 
+    ctx.fillRect(battX + 1.5, statusY + battH/2 - (battH * 0.7), battW - 3, battH * 0.7 - 1.5); 
+    
+    setFont("400", statusSize * 0.85); // Slightly larger font
     ctx.textAlign = "left";
-    const left = padX + w * 0.10;
-    const maxW5 = w - left - padX;
-    const timeSize5 = fitted("0928", "700", h * 0.17, maxW5);
-    const dateSize5 = Math.max(12, Math.round(timeSize5 * 0.22));
-    setFont("500", dateSize5);
-    ctx.fillText("AM  SAT  16", left, h * 0.76);
-    setFont("700", timeSize5);
-    ctx.fillText("0928", left, h * 0.88);
+    ctx.fillText("80%", battX + battW + 6, statusY + 2);
+    ctx.restore();
+    
     ctx.textAlign = "center";
   }
   ctx.restore();
