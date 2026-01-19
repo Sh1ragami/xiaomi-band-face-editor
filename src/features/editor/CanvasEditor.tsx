@@ -325,6 +325,21 @@ export default function CanvasEditor({ template, registerExport }: { template: T
     const handleKeyDown = (evt: KeyboardEvent) => {
       if (editingTextId) return; // typing inside inline editor; do not handle global shortcuts
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((document.activeElement as HTMLElement).tagName)) return;
+      // Arrow key move selected layer
+      if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(evt.key)) {
+        if (!selectedId || croppingLayerId || bgRemovingLayerId) return;
+        const L = layers.find(l => l.id === selectedId);
+        if (!L || L.locked) return;
+        const step = evt.shiftKey ? 10 : 1;
+        let dx = 0, dy = 0;
+        if (evt.key === 'ArrowUp') dy = -step;
+        else if (evt.key === 'ArrowDown') dy = step;
+        else if (evt.key === 'ArrowLeft') dx = -step;
+        else if (evt.key === 'ArrowRight') dx = step;
+        updateLayer(selectedId, { x: L.x + dx, y: L.y + dy }, true);
+        evt.preventDefault();
+        return;
+      }
       if ((evt.ctrlKey || evt.metaKey) && evt.key === 'z') {
         if (evt.shiftKey) redo(); else undo(); evt.preventDefault();
       } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'y') {
