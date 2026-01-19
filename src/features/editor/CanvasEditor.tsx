@@ -179,6 +179,31 @@ export default function CanvasEditor({ template, registerExport }: { template: T
 
   // deleteSelected is provided by useLayers; it deletes the currently selected layer
 
+  const clipboardRef = useRef<Partial<Layer> | null>(null);
+
+  const copySelected = useCallback(() => {
+    const L = layers.find(l => l.id === selectedId);
+    if (!L) return;
+    const { id: _omit, ...payload } = L as any;
+    clipboardRef.current = { ...payload } as Partial<Layer>;
+  }, [layers, selectedId]);
+
+  const pasteFromClipboard = useCallback(() => {
+    const c = clipboardRef.current; if (!c) return;
+    const dx = 20, dy = 20;
+    const patch = { ...c } as any;
+    if (typeof patch.x === 'number') patch.x = patch.x + dx; else patch.x = dx;
+    if (typeof patch.y === 'number') patch.y = patch.y + dy; else patch.y = dy;
+    addLayer(patch);
+  }, [addLayer]);
+
+  const duplicateSelected = useCallback(() => {
+    const L = layers.find(l => l.id === selectedId);
+    if (!L) return;
+    const { id: _omit, ...payload } = L as any;
+    addLayer({ ...(payload as Partial<Layer>), x: (L.x || 0) + 20, y: (L.y || 0) + 20 });
+  }, [layers, selectedId, addLayer]);
+
   useEffect(() => {
     const handleKeyDown = (evt: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((document.activeElement as HTMLElement).tagName)) return;
@@ -187,12 +212,20 @@ export default function CanvasEditor({ template, registerExport }: { template: T
       } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'y') {
         redo(); evt.preventDefault();
       } else if ((evt.key === "Delete" || evt.key === "Backspace") && selectedId && !croppingLayerId && !bgRemovingLayerId) {
-      deleteSelected();
+        deleteSelected();
+      } else if ((evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === 'c') {
+        copySelected(); evt.preventDefault();
+      } else if ((evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === 'v' && !croppingLayerId && !bgRemovingLayerId) {
+        pasteFromClipboard(); evt.preventDefault();
+      } else if ((evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === 'd' && !croppingLayerId && !bgRemovingLayerId) {
+        duplicateSelected(); evt.preventDefault();
+      } else if ((evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === 'x' && selectedId && !croppingLayerId && !bgRemovingLayerId) {
+        copySelected(); deleteSelected(); evt.preventDefault();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo, selectedId, croppingLayerId, bgRemovingLayerId, deleteSelected]);
+  }, [undo, redo, selectedId, croppingLayerId, bgRemovingLayerId, deleteSelected, copySelected, pasteFromClipboard, duplicateSelected]);
 
   useEffect(() => {
     try {
